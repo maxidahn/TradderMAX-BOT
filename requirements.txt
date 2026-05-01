@@ -1,0 +1,7 @@
+python-binance>=1.0.19
+flask>=3.0
+pandas>=2.0
+numpy>=1.24
+pytz>=2023.3
+requests>=2.31
+anthropic>=0.25

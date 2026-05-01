@@ -1,0 +1,22 @@
+{
+  "SOLUSDC": {
+    "symbol": "SOLUSDC",
+    "side": "BUY",
+    "entry_price": 84.46,
+    "quantity": 0.221,
+    "usdt_amount": 18.72,
+    "entry_time": "2026-05-01T16:22:57.638031+00:00",
+    "order_id": "3539749182",
+    "entry_fee": 0.01872
+  },
+  "ETHUSDC": {
+    "symbol": "ETHUSDC",
+    "side": "BUY",
+    "entry_price": 2307.21,
+    "quantity": 0.0137,
+    "usdt_amount": 31.799999999999997,
+    "entry_time": "2026-05-01T17:50:53.882426+00:00",
+    "order_id": "10039913422",
+    "entry_fee": 0.031799999999999995
+  }
+}

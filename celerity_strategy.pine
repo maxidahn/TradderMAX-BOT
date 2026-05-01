@@ -1,0 +1,357 @@
+// ============================================================================
+// Celerity Trader Bot - AI-Enhanced Strategy (Pine Script v5)
+// ============================================================================
+// Translated from the Python bot at github.com/celerity-bot
+//
+// Original bot combines 4 layers:
+//   1. Technical Analysis (RSI + EMA Crossover + Volume)  - 30%
+//   2. Sentiment Analysis (news/fear-greed)               - 15%  [not available in Pine]
+//   3. Machine Learning (gradient boosted model)          - 30%  [not available in Pine]
+//   4. Adaptive Regime Detection (ADX + volatility)       - 25%
+//
+// This Pine Script replicates layers 1 and 4, redistributing weights:
+//   - Technical Analysis: 55%
+//   - Adaptive Regime:    45%
+//
+// The regime engine dynamically adjusts EMA periods, RSI bands,
+// SL/TP levels, and volume thresholds based on market conditions.
+// ============================================================================
+
+//@version=5
+strategy("Celerity Adaptive Strategy",
+     overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=100,
+     initial_capital=1000,
+     commission_type=strategy.commission.percent,
+     commission_value=0.1,
+     slippage=1,
+     pyramiding=0)
+
+// ─── INPUTS ─────────────────────────────────────────────────────────────────
+
+// Base Technical Parameters
+grp_ta = "Technical Analysis (Base)"
+i_emaFastBase   = input.int(9,    "EMA Fast (base)",     minval=2,  maxval=50,  group=grp_ta)
+i_emaSlowBase   = input.int(21,   "EMA Slow (base)",     minval=5,  maxval=100, group=grp_ta)
+i_rsiPeriod     = input.int(14,   "RSI Period",          minval=2,  maxval=50,  group=grp_ta)
+i_rsiOBBase     = input.float(70, "RSI Overbought (base)", minval=50, maxval=95, group=grp_ta)
+i_rsiOSBase     = input.float(30, "RSI Oversold (base)",   minval=5,  maxval=50, group=grp_ta)
+i_volPeriod     = input.int(20,   "Volume MA Period",    minval=5,  maxval=100, group=grp_ta)
+i_volThreshBase = input.float(1.2,"Volume Threshold (base)", minval=0.5, maxval=5.0, step=0.1, group=grp_ta)
+
+// Risk Management
+grp_risk = "Risk Management (Base)"
+i_slBase  = input.float(2.0, "Stop Loss % (base)",   minval=0.5, maxval=10.0, step=0.5, group=grp_risk)
+i_tpBase  = input.float(3.0, "Take Profit % (base)", minval=0.5, maxval=15.0, step=0.5, group=grp_risk)
+
+// Transaction Costs
+grp_cost = "Transaction Costs"
+i_feeRate       = input.float(0.1,  "Fee per trade (%)",     minval=0, maxval=1.0, step=0.01, group=grp_cost)
+i_slippageBase  = input.float(0.05, "Est. slippage (%)",     minval=0, maxval=1.0, step=0.01, group=grp_cost)
+
+// Adaptive Engine
+grp_adapt = "Adaptive Regime Engine"
+i_useAdaptive   = input.bool(true,  "Enable Adaptive Regime", group=grp_adapt)
+i_adxPeriod     = input.int(14,     "ADX Period",       minval=5,  maxval=50, group=grp_adapt)
+i_adxTrend      = input.float(20,   "ADX Trend Threshold", minval=10, maxval=40, group=grp_adapt)
+i_volLookback   = input.int(10,     "Volatility Short Window", minval=5,  maxval=30, group=grp_adapt)
+i_volLongLookback = input.int(50,   "Volatility Long Window",  minval=20, maxval=100, group=grp_adapt)
+
+// Signal Weights
+grp_weights = "Signal Weights"
+i_weightTech    = input.float(55, "Technical Weight (%)", minval=0, maxval=100, group=grp_weights)
+i_weightRegime  = input.float(45, "Regime Weight (%)",    minval=0, maxval=100, group=grp_weights)
+
+// Signal Threshold
+grp_signal = "Signal Threshold"
+i_signalThresh  = input.float(0.25, "Buy/Sell Threshold", minval=0.05, maxval=0.8, step=0.05, group=grp_signal, tooltip="Combined score must exceed this to trigger entry. Cost drag is added automatically.")
+
+// Schedule Filter (optional)
+grp_sched = "Session Filter"
+i_useSession    = input.bool(false, "Restrict to NYSE Hours", group=grp_sched)
+i_sessionStart  = input.session("0930-1600", "NYSE Session (ET)", group=grp_sched)
+
+// Visual
+grp_vis = "Visuals"
+i_showRegime    = input.bool(true, "Show Regime Background", group=grp_vis)
+i_showTable     = input.bool(true, "Show Info Table",        group=grp_vis)
+
+
+// ─── REGIME DETECTION (Layer 4 from Python) ─────────────────────────────────
+
+// ADX Calculation (simplified, matching Python's approach)
+_tr = math.max(high - low, math.max(math.abs(high - close[1]), math.abs(low - close[1])))
+atr14 = ta.rma(_tr, i_adxPeriod)
+
+_plusDM  = high - high[1] > low[1] - low and high - high[1] > 0 ? high - high[1] : 0.0
+_minusDM = low[1] - low > high - high[1] and low[1] - low > 0 ? low[1] - low : 0.0
+
+_plusDI  = atr14 != 0 ? 100 * ta.rma(_plusDM, i_adxPeriod) / atr14 : 0.0
+_minusDI = atr14 != 0 ? 100 * ta.rma(_minusDM, i_adxPeriod) / atr14 : 0.0
+
+_dx = (_plusDI + _minusDI) != 0 ? 100 * math.abs(_plusDI - _minusDI) / (_plusDI + _minusDI) : 0.0
+adxValue = ta.rma(_dx, i_adxPeriod)
+
+// Trend strength normalized 0-1 (matching Python: min(adx/50, 1.0))
+trendStrength = math.min(adxValue / 50.0, 1.0)
+
+// Volatility level (current vs average, matching Python)
+_returns = close / close[1] - 1
+_volShort = ta.stdev(_returns, i_volLookback)
+_volLong  = ta.stdev(_returns, i_volLongLookback)
+volatilityLevel = _volLong != 0 ? _volShort / _volLong : 1.0
+
+// Regime classification (exact match to Python logic)
+// VOLATILE: trend > 0.5 AND vol > 1.3
+// TRENDING: trend > 0.4
+// QUIET:    vol < 0.7
+// RANGING:  everything else
+
+REGIME_TRENDING = 1
+REGIME_RANGING  = 2
+REGIME_VOLATILE = 3
+REGIME_QUIET    = 4
+
+regime = REGIME_RANGING  // default
+
+if trendStrength > 0.5 and volatilityLevel > 1.3
+    regime := REGIME_VOLATILE
+else if trendStrength > 0.4
+    regime := REGIME_TRENDING
+else if volatilityLevel < 0.7
+    regime := REGIME_QUIET
+else
+    regime := REGIME_RANGING
+
+
+// ─── ADAPTIVE PARAMETERS ────────────────────────────────────────────────────
+// Adjust EMA/RSI/SL/TP/Volume per regime (matching Python's adapt_parameters)
+
+var float emaFast     = i_emaFastBase
+var float emaSlow     = i_emaSlowBase
+var float rsiOB       = i_rsiOBBase
+var float rsiOS       = i_rsiOSBase
+var float slPct       = i_slBase
+var float tpPct       = i_tpBase
+var float volThresh   = i_volThreshBase
+var float sizeMult    = 1.0
+
+if i_useAdaptive
+    if regime == REGIME_TRENDING
+        emaFast   := 12
+        emaSlow   := 26
+        rsiOB     := i_rsiOBBase
+        rsiOS     := i_rsiOSBase
+        tpPct     := 4.5
+        slPct     := 2.5
+        volThresh := 1.0
+        sizeMult  := 1.2
+    else if regime == REGIME_RANGING
+        emaFast   := i_emaFastBase
+        emaSlow   := i_emaSlowBase
+        rsiOB     := 75
+        rsiOS     := 25
+        tpPct     := 2.0
+        slPct     := 1.5
+        volThresh := 1.3
+        sizeMult  := 0.8
+    else if regime == REGIME_VOLATILE
+        emaFast   := 7
+        emaSlow   := 18
+        rsiOB     := i_rsiOBBase
+        rsiOS     := i_rsiOSBase
+        tpPct     := 5.0
+        slPct     := 3.5
+        volThresh := 1.5
+        sizeMult  := 0.5
+    else if regime == REGIME_QUIET
+        emaFast   := 8
+        emaSlow   := 20
+        rsiOB     := 65
+        rsiOS     := 35
+        tpPct     := 3.0
+        slPct     := 1.5
+        volThresh := 1.8
+        sizeMult  := 1.0
+else
+    emaFast   := i_emaFastBase
+    emaSlow   := i_emaSlowBase
+    rsiOB     := i_rsiOBBase
+    rsiOS     := i_rsiOSBase
+    slPct     := i_slBase
+    tpPct     := i_tpBase
+    volThresh := i_volThreshBase
+    sizeMult  := 1.0
+
+
+// ─── TECHNICAL INDICATORS (Layer 1) ────────────────────────────────────────
+
+// EMA (using adaptive periods)
+emaFastVal = ta.ema(close, int(emaFast))
+emaSlowVal = ta.ema(close, int(emaSlow))
+
+// RSI
+rsiVal = ta.rsi(close, i_rsiPeriod)
+
+// Volume Ratio
+volMA    = ta.sma(volume, i_volPeriod)
+volRatio = volMA != 0 ? volume / volMA : 1.0
+
+
+// ─── TECHNICAL SCORE (matching Python's _analyze_technical) ─────────────────
+
+// EMA crossover detection
+bullishCross = ta.crossover(emaFastVal, emaSlowVal)
+bearishCross = ta.crossunder(emaFastVal, emaSlowVal)
+emaBullish   = emaFastVal > emaSlowVal
+
+// Score calculation (exact match to Python logic)
+techScore = 0.0
+
+if bullishCross
+    techScore := 0.5
+else if bearishCross
+    techScore := -0.5
+else if emaBullish
+    techScore := 0.15
+else
+    techScore := -0.15
+
+// RSI contribution
+if rsiVal < rsiOS
+    techScore := techScore + 0.3
+else if rsiVal > rsiOB
+    techScore := techScore - 0.3
+
+// Volume confirmation multiplier
+volConfirmed = volRatio >= volThresh
+if volConfirmed
+    techScore := techScore * 1.3
+
+// Clamp to [-1, 1]
+techScore := math.max(-1.0, math.min(1.0, techScore))
+
+
+// ─── REGIME SCORE (matching Python's _analyze_regime) ───────────────────────
+
+regimeScore = regime == REGIME_TRENDING ? 0.1 : 0.0
+
+
+// ─── COMBINED SCORE & SIGNAL ────────────────────────────────────────────────
+
+wTech   = i_weightTech / 100.0
+wRegime = i_weightRegime / 100.0
+
+combinedScore = techScore * wTech + regimeScore * wRegime
+
+// Cost-adjusted threshold (matching Python logic)
+costDrag = (i_feeRate * 2 + i_slippageBase) / 100.0
+adjThreshold = i_signalThresh + costDrag
+
+isBuy  = combinedScore > adjThreshold
+isSell = combinedScore < -adjThreshold
+
+
+// ─── SESSION FILTER ─────────────────────────────────────────────────────────
+
+inSession = i_useSession ? not na(time(timeframe.period, i_sessionStart, "America/New_York")) : true
+
+
+// ─── STRATEGY EXECUTION ────────────────────────────────────────────────────
+
+// Adaptive SL/TP with cost drag (matching Python's check_stop_loss_take_profit)
+grossSL = slPct + (i_feeRate * 2 + i_slippageBase)
+grossTP = tpPct + (i_feeRate * 2 + i_slippageBase)
+
+if isBuy and inSession and strategy.position_size == 0
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", "Long",
+         profit = close * (grossTP / 100) / syminfo.mintick,
+         loss   = close * (grossSL / 100) / syminfo.mintick)
+
+if isSell and inSession and strategy.position_size > 0
+    strategy.close("Long", comment="Sell Signal")
+
+// Close at session end if using session filter
+if i_useSession and not inSession and strategy.position_size > 0
+    strategy.close("Long", comment="Session End")
+
+
+// ─── PLOTS ──────────────────────────────────────────────────────────────────
+
+// EMA lines
+plot(emaFastVal, "EMA Fast", color=color.new(color.blue, 0),  linewidth=2)
+plot(emaSlowVal, "EMA Slow", color=color.new(color.orange, 0), linewidth=2)
+
+// Buy/Sell markers
+plotshape(isBuy and inSession and strategy.position_size == 0,
+     title="Buy Signal", style=shape.triangleup,
+     location=location.belowbar, color=color.new(color.green, 0), size=size.small)
+plotshape(isSell and inSession and strategy.position_size > 0,
+     title="Sell Signal", style=shape.triangledown,
+     location=location.abovebar, color=color.new(color.red, 0), size=size.small)
+
+// Regime background
+regimeColor = regime == REGIME_TRENDING ? color.new(color.green, 92) :
+              regime == REGIME_VOLATILE ? color.new(color.red, 92) :
+              regime == REGIME_QUIET    ? color.new(color.blue, 92) :
+              color.new(color.gray, 95)
+
+bgcolor(i_showRegime ? regimeColor : na, title="Regime Background")
+
+
+// ─── INFO TABLE ─────────────────────────────────────────────────────────────
+
+if i_showTable and barstate.islast
+    var table infoTbl = table.new(position.top_right, 2, 10,
+         bgcolor=color.new(color.black, 80), border_width=1, border_color=color.gray)
+
+    regimeStr = regime == REGIME_TRENDING ? "TRENDING" :
+                regime == REGIME_VOLATILE ? "VOLATILE" :
+                regime == REGIME_QUIET    ? "QUIET" : "RANGING"
+
+    regimeTxtColor = regime == REGIME_TRENDING ? color.green :
+                     regime == REGIME_VOLATILE ? color.red :
+                     regime == REGIME_QUIET    ? color.aqua : color.gray
+
+    signalStr = combinedScore > adjThreshold ? "BUY" :
+                combinedScore < -adjThreshold ? "SELL" : "HOLD"
+
+    signalColor = signalStr == "BUY" ? color.green :
+                  signalStr == "SELL" ? color.red : color.gray
+
+    table.cell(infoTbl, 0, 0, "CELERITY", text_color=color.white, text_size=size.normal)
+    table.cell(infoTbl, 1, 0, "v1.0",     text_color=color.gray,  text_size=size.small)
+
+    table.cell(infoTbl, 0, 1, "Regime",       text_color=color.gray,    text_size=size.small)
+    table.cell(infoTbl, 1, 1, regimeStr,       text_color=regimeTxtColor, text_size=size.small)
+
+    table.cell(infoTbl, 0, 2, "Signal",        text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 2, signalStr,        text_color=signalColor, text_size=size.small)
+
+    table.cell(infoTbl, 0, 3, "Score",         text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 3, str.tostring(combinedScore, "#.###"), text_color=color.white, text_size=size.small)
+
+    table.cell(infoTbl, 0, 4, "RSI",           text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 4, str.tostring(rsiVal, "#.0"), text_color=color.white, text_size=size.small)
+
+    table.cell(infoTbl, 0, 5, "Vol Ratio",     text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 5, str.tostring(volRatio, "#.##") + "x", text_color=volConfirmed ? color.green : color.gray, text_size=size.small)
+
+    table.cell(infoTbl, 0, 6, "EMA",           text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 6, str.tostring(int(emaFast)) + "/" + str.tostring(int(emaSlow)), text_color=color.white, text_size=size.small)
+
+    table.cell(infoTbl, 0, 7, "SL / TP",       text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 7, str.tostring(slPct, "#.#") + "% / " + str.tostring(tpPct, "#.#") + "%", text_color=color.white, text_size=size.small)
+
+    table.cell(infoTbl, 0, 8, "ADX",           text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 8, str.tostring(adxValue, "#.0"), text_color=color.white, text_size=size.small)
+
+    table.cell(infoTbl, 0, 9, "Trend Str",     text_color=color.gray,  text_size=size.small)
+    table.cell(infoTbl, 1, 9, str.tostring(trendStrength * 100, "#.0") + "%", text_color=color.white, text_size=size.small)
+
+// ─── ALERTS ─────────────────────────────────────────────────────────────────
+
+alertcondition(isBuy and inSession, title="Celerity BUY", message="Celerity: BUY signal | Score: {{plot_0}} | Regime: adaptive")
+alertcondition(isSell and inSession, title="Celerity SELL", message="Celerity: SELL signal | Score: {{plot_0}} | Regime: adaptive")

@@ -1,0 +1,22 @@
+[Unit]
+Description=Celerity Trader Bot — AI Trading
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=celerity
+WorkingDirectory=/opt/celerity-bot
+EnvironmentFile=/opt/celerity-bot/.env
+ExecStart=/opt/celerity-bot/venv/bin/python app.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/celerity-bot/logs/celerity_bot.log
+StandardError=append:/opt/celerity-bot/logs/celerity_bot.log
+
+# Safety limits
+MemoryMax=512M
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

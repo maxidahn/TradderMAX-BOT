@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+models/*.pkl
+logs/
+.env
+*.egg-info/
+dist/
+build/
+package-lock.json
+node_modules/
