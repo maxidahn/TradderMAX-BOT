@@ -3,8 +3,9 @@ Celerity Trader Bot - Sentiment Analysis Engine
 =================================================
 Analyzes market sentiment from multiple free sources:
   1. CryptoCompare News API (free, no key needed for basic)
-  2. CoinGecko market data (fear & greed indicators)
+  2. CoinGecko market data (market cap change)
   3. Price momentum as sentiment proxy
+  4. Alternative.me Fear & Greed Index (crypto-specific, updates daily)
 
 Produces a sentiment score from -1.0 (extreme fear) to +1.0 (extreme greed).
 """
@@ -49,6 +50,9 @@ class SentimentResult:
     news_score: float      # Score from news analysis
     momentum_score: float  # Score from price momentum
     market_score: float    # Score from market indicators
+    fear_greed_score: float  # Score from Fear & Greed Index (-1 to +1)
+    fear_greed_value: int    # Raw F&G value (0-100)
+    fear_greed_label: str    # e.g. "Fear", "Extreme Greed"
     headlines: List[str]   # Recent relevant headlines
     confidence: float      # 0.0 to 1.0
     timestamp: str
@@ -89,7 +93,9 @@ class SentimentAnalyzer:
 
     def __init__(self):
         self._cache: Dict[str, dict] = {}
-        self._cache_ttl = 300  # 5 minutes cache
+        self._cache_ttl = 300          # 5 min cache for price/news data
+        self._fg_cache: dict = {}      # Separate cache for Fear & Greed (updates daily)
+        self._fg_cache_ttl = 3600 * 4  # 4 hours — F&G only changes once/day
 
     def analyze(self, symbol: str) -> SentimentResult:
         """
@@ -120,28 +126,39 @@ class SentimentAnalyzer:
             asset = symbol.lower()
 
         # Gather signals from multiple sources
-        news_score, headlines = self._analyze_news(search_terms)
-        momentum_score = self._analyze_momentum(symbol)
-        market_score = self._analyze_market_indicators(asset)
+        news_score, headlines           = self._analyze_news(search_terms)
+        momentum_score                  = self._analyze_momentum(symbol)
+        market_score                    = self._analyze_market_indicators(asset)
+        fg_score, fg_value, fg_label    = self._fear_greed_index()
 
-        # Weighted combination
-        # News: 35%, Momentum: 40%, Market: 25%
-        combined = (
-            news_score * 0.35 +
-            momentum_score * 0.40 +
-            market_score * 0.25
-        )
+        # ── Weighted combination ──────────────────────────────────────────────
+        # Fear & Greed is the most reliable crypto sentiment signal → 35% weight
+        # Only apply F&G for crypto assets (not gold)
+        if asset != "gold" and fg_value > 0:
+            combined = (
+                news_score     * 0.20 +
+                momentum_score * 0.30 +
+                market_score   * 0.15 +
+                fg_score       * 0.35
+            )
+        else:
+            combined = (
+                news_score     * 0.35 +
+                momentum_score * 0.40 +
+                market_score   * 0.25
+            )
 
         # Clamp to [-1, 1]
         combined = max(-1.0, min(1.0, combined))
 
         # Confidence based on how many sources provided data
         sources_active = sum([
-            abs(news_score) > 0.01,
+            abs(news_score)     > 0.01,
             abs(momentum_score) > 0.01,
-            abs(market_score) > 0.01,
+            abs(market_score)   > 0.01,
+            fg_value            > 0,
         ])
-        confidence = sources_active / 3.0
+        confidence = sources_active / 4.0
 
         result = SentimentResult(
             score=round(combined, 3),
@@ -149,6 +166,9 @@ class SentimentAnalyzer:
             news_score=round(news_score, 3),
             momentum_score=round(momentum_score, 3),
             market_score=round(market_score, 3),
+            fear_greed_score=round(fg_score, 3),
+            fear_greed_value=fg_value,
+            fear_greed_label=fg_label,
             headlines=headlines[:5],
             confidence=round(confidence, 2),
             timestamp=datetime.now(timezone.utc).isoformat(),
@@ -273,16 +293,60 @@ class SentimentAnalyzer:
             pass
         return 0.0
 
+    def _fear_greed_index(self) -> tuple:
+        """
+        Fetches the Crypto Fear & Greed Index from Alternative.me.
+        API: https://api.alternative.me/fng/
+        - Free, no key required
+        - Updates once per day at midnight UTC
+        - Value: 0 (Extreme Fear) → 100 (Extreme Greed)
+
+        Returns: (score -1.0..+1.0, raw_value 0-100, label str)
+        """
+        # Use dedicated cache — F&G only updates daily
+        now = time.time()
+        if self._fg_cache and now - self._fg_cache.get("time", 0) < self._fg_cache_ttl:
+            cached = self._fg_cache
+            return cached["score"], cached["value"], cached["label"]
+
+        try:
+            url  = "https://api.alternative.me/fng/?limit=1&format=json"
+            resp = requests.get(url, timeout=8)
+
+            if resp.status_code == 200:
+                data  = resp.json()
+                entry = data.get("data", [{}])[0]
+                value = int(entry.get("value", 50))
+                label = entry.get("value_classification", "Neutral")
+
+                # Map 0-100 → -1.0 to +1.0
+                # 50 = neutral (score 0), 0 = extreme fear (-1), 100 = extreme greed (+1)
+                score = (value - 50) / 50.0
+                score = round(max(-1.0, min(1.0, score)), 3)
+
+                self._fg_cache = {"score": score, "value": value, "label": label, "time": now}
+                logger.info(f"Fear & Greed Index: {value}/100 — {label} (score: {score:+.2f})")
+                return score, value, label
+
+        except Exception as e:
+            logger.debug(f"Fear & Greed fetch failed: {e}")
+
+        # Fallback: neutral
+        return 0.0, 0, "Unavailable"
+
     def get_summary(self, symbol: str) -> Dict:
         """Get sentiment summary for the dashboard."""
         result = self.analyze(symbol)
         return {
-            "score": result.score,
-            "label": result.label,
-            "news_score": result.news_score,
-            "momentum_score": result.momentum_score,
-            "market_score": result.market_score,
-            "headlines": result.headlines,
-            "confidence": result.confidence,
-            "timestamp": result.timestamp,
+            "score":              result.score,
+            "label":              result.label,
+            "news_score":         result.news_score,
+            "momentum_score":     result.momentum_score,
+            "market_score":       result.market_score,
+            "fear_greed_value":   result.fear_greed_value,
+            "fear_greed_label":   result.fear_greed_label,
+            "fear_greed_score":   result.fear_greed_score,
+            "headlines":          result.headlines,
+            "confidence":         result.confidence,
+            "timestamp":          result.timestamp,
         }

@@ -31,7 +31,9 @@ class Position:
     usdt_amount: float
     entry_time: str
     order_id: str = ""
-    entry_fee: float = 0.0  # Fee paid on entry
+    entry_fee: float = 0.0       # Fee paid on entry
+    peak_price: float = 0.0     # Highest price seen since entry (trailing stop anchor)
+    partial_tp_taken: bool = False  # True once the 50% partial exit has fired
 
 
 @dataclass
@@ -104,11 +106,16 @@ class BinanceTrader:
         positions = {}
         for sym, p in raw.items():
             try:
+                # peak_price defaults to entry_price if missing (old save files)
+                peak = p.get("peak_price", 0.0)
+                if peak == 0.0:
+                    peak = p["entry_price"]
                 positions[sym] = Position(
                     symbol=p["symbol"], side=p["side"],
                     entry_price=p["entry_price"], quantity=p["quantity"],
                     usdt_amount=p["usdt_amount"], entry_time=p["entry_time"],
                     order_id=p.get("order_id", ""), entry_fee=p.get("entry_fee", 0),
+                    peak_price=peak,
                 )
             except Exception as e:
                 logger.warning(f"Could not restore position {sym}: {e}")
@@ -378,6 +385,87 @@ class BinanceTrader:
             logger.error(f"Failed to get account info: {error_type}: {e}")
             return {"error": f"{error_type}: {e}"}
 
+    def get_portfolio_value(self) -> Dict:
+        """
+        Calculate total portfolio value in USD across all Binance assets.
+        Stablecoins (USDC, USDT, BUSD, FDUSD) count at face value.
+        Crypto assets are valued at current market price.
+        Returns a dict with total, stablecoins, crypto_value, and per-asset breakdown.
+        """
+        STABLECOINS = {"USDC", "USDT", "BUSD", "FDUSD"}
+        if not self.client or not self.connected:
+            return {"error": "Not connected", "total": 0.0}
+
+        try:
+            account = self.client.get_account()
+            all_balances = account.get("balances", [])
+
+            # Filter to assets with non-zero balance
+            assets = {
+                b["asset"]: float(b["free"]) + float(b["locked"])
+                for b in all_balances
+                if float(b["free"]) + float(b["locked"]) > 0
+            }
+
+            stablecoin_total = 0.0
+            crypto_total = 0.0
+            breakdown = []
+
+            for asset, amount in assets.items():
+                if asset in STABLECOINS:
+                    stablecoin_total += amount
+                    breakdown.append({
+                        "asset": asset,
+                        "amount": amount,
+                        "price": 1.0,
+                        "value_usd": amount,
+                        "type": "stablecoin",
+                    })
+                else:
+                    # Try ASSET+USDC first, then ASSET+USDT
+                    price = None
+                    for quote in ("USDC", "USDT"):
+                        try:
+                            ticker = self.client.get_symbol_ticker(symbol=f"{asset}{quote}")
+                            price = float(ticker["price"])
+                            break
+                        except Exception:
+                            pass
+                    if price is None or price == 0.0:
+                        # Could not price this asset — skip
+                        breakdown.append({
+                            "asset": asset,
+                            "amount": amount,
+                            "price": None,
+                            "value_usd": None,
+                            "type": "unknown",
+                        })
+                        continue
+                    value = amount * price
+                    crypto_total += value
+                    breakdown.append({
+                        "asset": asset,
+                        "amount": amount,
+                        "price": price,
+                        "value_usd": value,
+                        "type": "crypto",
+                    })
+
+            # Sort: stablecoins first by value desc, then crypto by value desc
+            breakdown.sort(key=lambda x: (x["type"] != "stablecoin", -(x["value_usd"] or 0)))
+
+            total = stablecoin_total + crypto_total
+            return {
+                "total": round(total, 2),
+                "stablecoins": round(stablecoin_total, 2),
+                "crypto_value": round(crypto_total, 2),
+                "breakdown": breakdown,
+            }
+
+        except Exception as e:
+            logger.error(f"get_portfolio_value error: {e}")
+            return {"error": str(e), "total": 0.0}
+
     def place_buy(self, symbol: str, usdt_amount: float) -> Optional[Position]:
         """
         Place a market buy order.
@@ -459,8 +547,31 @@ class BinanceTrader:
                 quantity=quantity,
             )
 
-            fill_price = float(order.get("fills", [{}])[0].get("price", price))
-            fill_qty = float(order.get("executedQty", quantity))
+            fills = order.get("fills", [])
+            fill_price = float(fills[0].get("price", price)) if fills else price
+            fill_qty_gross = float(order.get("executedQty", quantity))
+
+            # ── Deduct base-asset fees from fill quantity ──────────────────────
+            # Binance charges spot BUY fees IN the received (base) asset by default.
+            # e.g. buy 0.0061 PAXG → Binance keeps 0.0000061 PAXG as fee → you get 0.006094.
+            # If we record the gross executedQty we will try to sell more than we own
+            # and get APIError(-2010) every time.
+            base_asset = symbol
+            for quote in ("USDT", "USDC", "BUSD", "BTC", "ETH", "BNB", "FDUSD"):
+                if base_asset.endswith(quote):
+                    base_asset = base_asset[:-len(quote)]
+                    break
+            fee_in_base = sum(
+                float(f.get("commission", 0))
+                for f in fills
+                if f.get("commissionAsset") == base_asset
+            )
+            fill_qty = fill_qty_gross - fee_in_base
+            if fee_in_base > 0:
+                logger.info(
+                    f"BUY {symbol}: fee deducted from qty — "
+                    f"gross: {fill_qty_gross}, fee: {fee_in_base} {base_asset}, net: {fill_qty}"
+                )
 
             # Calculate actual slippage from expected vs fill price
             actual_slippage_pct = ((fill_price - price) / price) * 100 if price > 0 else 0
@@ -476,6 +587,7 @@ class BinanceTrader:
                 entry_time=datetime.now(timezone.utc).isoformat(),
                 order_id=str(order.get("orderId", "")),
                 entry_fee=entry_fee,
+                peak_price=fill_price,  # Trailing stop starts from entry price
             )
 
             self.positions[symbol] = position
@@ -485,6 +597,84 @@ class BinanceTrader:
 
         except Exception as e:
             logger.error(f"BUY order failed for {symbol}: {e}")
+            return None
+
+    def place_partial_sell(self, symbol: str, fraction: float = 0.5) -> Optional[TradeRecord]:
+        """
+        Sell a fraction of the open position (default 50%) as a partial take profit.
+        Updates the position's quantity in-place; does NOT remove the position.
+        Marks position.partial_tp_taken = True so this only fires once.
+        """
+        position = self.positions.get(symbol)
+        if not position or position.partial_tp_taken:
+            return None
+
+        partial_qty = position.quantity * fraction
+        if partial_qty <= 0:
+            return None
+
+        # Round to LOT_SIZE precision
+        try:
+            info = self.client.get_symbol_info(symbol)
+            if info:
+                for f in info.get("filters", []):
+                    if f["filterType"] == "LOT_SIZE":
+                        step = float(f["stepSize"])
+                        precision = len(str(step).rstrip("0").split(".")[-1]) if "." in str(step) else 0
+                        partial_qty = round(partial_qty - (partial_qty % step), precision)
+        except Exception:
+            pass
+
+        if partial_qty <= 0:
+            return None
+
+        try:
+            current_price = self.get_current_price(symbol)
+            if not current_price:
+                return None
+
+            order = self.client.order_market_sell(symbol=symbol, quantity=partial_qty)
+            fill_price = float(order.get("fills", [{}])[0].get("price", current_price))
+
+            exit_usdt  = fill_price * partial_qty
+            exit_fee   = self.calculate_fee(exit_usdt)
+            entry_fee_partial = position.entry_fee * fraction
+            total_fees = entry_fee_partial + exit_fee
+
+            pnl_gross  = (fill_price - position.entry_price) * partial_qty
+            pnl_net    = pnl_gross - total_fees
+            pnl_net_pct = (pnl_net / (position.usdt_amount * fraction)) * 100 if position.usdt_amount > 0 else 0
+
+            record = TradeRecord(
+                symbol=symbol, side="SELL",
+                price=fill_price, quantity=partial_qty,
+                usdt_amount=exit_usdt,
+                pnl=pnl_net, pnl_pct=pnl_net_pct,
+                pnl_gross=pnl_gross, total_fees=total_fees,
+                slippage_cost=0.0,
+                reason="PARTIAL_TP",
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                order_id=str(order.get("orderId", "")),
+            )
+
+            # Update position: reduce quantity, mark partial taken, adjust entry_fee
+            position.quantity     -= partial_qty
+            position.entry_fee    -= entry_fee_partial
+            position.usdt_amount  *= (1 - fraction)
+            position.partial_tp_taken = True
+
+            self.trade_history.append(record)
+            self._save_state()
+
+            logger.info(
+                f"PARTIAL_TP {symbol}: sold {fraction*100:.0f}% ({partial_qty}) "
+                f"@ ${fill_price:.4f} | pnl: ${pnl_net:+.4f} ({pnl_net_pct:+.2f}%) "
+                f"| remaining qty: {position.quantity}"
+            )
+            return record
+
+        except Exception as e:
+            logger.error(f"PARTIAL_TP order failed for {symbol}: {e}")
             return None
 
     def place_sell(self, symbol: str, reason: str = "Signal") -> Optional[TradeRecord]:
@@ -508,9 +698,16 @@ class BinanceTrader:
             logger.warning(f"No open position for {symbol}")
             return None
 
-        # For SL/TP we skip spread check (must exit regardless for safety)
-        # For signal-based sells, check spread
-        if reason not in ("STOP_LOSS", "TAKE_PROFIT"):
+        # Skip spread check for ALL exit reasons — closing a position is always
+        # more important than spread conditions.  Wide spreads appear precisely
+        # when the market is moving against us, so blocking exits then is dangerous.
+        # Spread check is only useful for NEW entries (place_buy).
+        _SPREAD_BYPASS_EXITS = (
+            "STOP_LOSS", "TAKE_PROFIT",
+            "Manual close", "AI Signal", "Approved",
+            "TRAILING_STOP", "TIMEOUT", "LOSS_TIMEOUT",
+        )
+        if reason not in _SPREAD_BYPASS_EXITS:
             spread_ok, spread_info, spread_msg = self.check_spread_acceptable(symbol)
             if not spread_ok:
                 logger.warning(f"SELL {symbol} BLOCKED: {spread_msg}")
@@ -534,9 +731,22 @@ class BinanceTrader:
             logger.info(f"SELL {symbol}: qty={position.quantity} @ ~${current_price} ({reason}) "
                         f"[fees: ${total_fees:.4f}, est.slip: ${slippage_cost:.4f}]")
 
+            # ── LOT_SIZE precision: round sell qty to Binance step requirements ──
+            sell_qty = position.quantity
+            try:
+                info = self.client.get_symbol_info(symbol)
+                if info:
+                    for f in info.get("filters", []):
+                        if f["filterType"] == "LOT_SIZE":
+                            step = float(f["stepSize"])
+                            precision = len(str(step).rstrip("0").split(".")[-1]) if "." in str(step) else 0
+                            sell_qty = round(sell_qty - (sell_qty % step), precision)
+            except Exception as lot_err:
+                logger.debug(f"LOT_SIZE check skipped for {symbol}: {lot_err}")
+
             order = self.client.order_market_sell(
                 symbol=symbol,
-                quantity=position.quantity,
+                quantity=sell_qty,
             )
 
             fill_price = float(order.get("fills", [{}])[0].get("price", current_price))
@@ -605,6 +815,46 @@ class BinanceTrader:
             logger.error(f"SELL order failed for {symbol}: {e}")
             return None
 
+    def get_daily_stats(self) -> Dict:
+        """
+        Calcula métricas del día actual (UTC).
+        Se resetean automáticamente en cada nueva jornada.
+        """
+        from datetime import date
+        today = date.today().isoformat()  # "2026-05-04"
+        daily = [t for t in self.trade_history if t.timestamp and t.timestamp[:10] == today]
+
+        if not daily:
+            return {
+                "trades": 0, "wins": 0, "losses": 0,
+                "pnl": 0.0, "pnl_gross": 0.0,
+                "win_rate": 0.0, "fees": 0.0, "slippage": 0.0,
+                "best_trade": None, "worst_trade": None,
+            }
+
+        wins    = [t for t in daily if t.pnl > 0]
+        losses  = [t for t in daily if t.pnl <= 0]
+        pnl     = sum(t.pnl for t in daily)
+        fees    = sum(t.total_fees for t in daily)
+        slippage = sum(t.slippage_cost for t in daily)
+        win_rate = round(len(wins) / len(daily) * 100, 1)
+
+        best  = max(daily, key=lambda t: t.pnl)
+        worst = min(daily, key=lambda t: t.pnl)
+
+        return {
+            "trades":    len(daily),
+            "wins":      len(wins),
+            "losses":    len(losses),
+            "pnl":       round(pnl, 4),
+            "pnl_gross": round(sum(t.pnl_gross for t in daily), 4),
+            "win_rate":  win_rate,
+            "fees":      round(fees, 4),
+            "slippage":  round(slippage, 4),
+            "best_trade":  {"symbol": best.symbol,  "pnl": round(best.pnl, 4),  "pnl_pct": round(best.pnl_pct, 2)},
+            "worst_trade": {"symbol": worst.symbol, "pnl": round(worst.pnl, 4), "pnl_pct": round(worst.pnl_pct, 2)},
+        }
+
     def get_status(self) -> Dict:
         """Get trader status for the dashboard (with cost breakdown)."""
         total_pnl_net = sum(t.pnl for t in self.trade_history)
@@ -652,5 +902,6 @@ class BinanceTrader:
                 "total_fees_paid": round(total_fees, 4),
                 "total_slippage_cost": round(total_slippage, 4),
                 "cost_drag_pct": round((total_fees / total_pnl_gross * 100), 1) if total_pnl_gross > 0 else 0,
+                "daily": self.get_daily_stats(),   # ← métricas del día actual
             },
         }

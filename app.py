@@ -105,6 +105,12 @@ def api_toggle_pair():
             return jsonify({"success": True, "enabled": pair.enabled})
     return jsonify({"success": False}), 404
 
+@app.route("/api/portfolio")
+def api_portfolio():
+    """Return total portfolio value: stablecoins + crypto positions at current prices."""
+    return jsonify(bot.trader.get_portfolio_value())
+
+
 @app.route("/api/balance")
 def api_balance():
     """Debug endpoint to test balance directly."""

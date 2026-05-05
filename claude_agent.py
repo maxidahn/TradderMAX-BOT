@@ -26,12 +26,16 @@ from typing import Dict, Optional
 
 logger = logging.getLogger("celerity.claude")
 
-# Only activate Claude when base score exceeds this threshold
-ACTIVATION_THRESHOLD = 0.15
+# Only activate Claude when base score is close to the execution threshold
+# (0.55 means the signal is already strong — Claude adds final confirmation)
+ACTIVATION_THRESHOLD = 0.55
 # Claude's weight in the final score
 CLAUDE_WEIGHT = 0.20
-# Minimum seconds between Claude calls per symbol (avoid hammering the API)
-MIN_CALL_INTERVAL = 120  # 2 minutes
+# Minimum seconds between Claude calls per symbol — 15 min is enough
+# (market conditions don't change meaningfully in 2 min)
+MIN_CALL_INTERVAL = 900  # 15 minutes
+# Max Claude calls allowed per full bot cycle (all pairs combined)
+MAX_CALLS_PER_CYCLE = 2
 
 
 class ClaudeAgent:
@@ -44,6 +48,8 @@ class ClaudeAgent:
         self._last_call: Dict[str, float] = {}
         self._last_result: Dict[str, dict] = {}
         self._call_count = 0
+        self._cycle_calls = 0       # calls made in current bot cycle
+        self._cycle_reset_time = 0  # timestamp of last cycle reset
         self._init_client()
 
     def _init_client(self):
@@ -89,9 +95,19 @@ class ClaudeAgent:
         if not self.enabled or not self.client:
             return self._neutral()
 
-        # Only activate above threshold
+        # Only activate when score is close to execution threshold (strong signal)
         if abs(base_score) < ACTIVATION_THRESHOLD:
             return self._neutral()
+
+        # Reset cycle counter every 60 seconds (one full bot cycle across all pairs)
+        if now - self._cycle_reset_time > 60:
+            self._cycle_calls = 0
+            self._cycle_reset_time = now
+
+        # Max 2 Claude calls per cycle — save budget for the strongest signals
+        if self._cycle_calls >= MAX_CALLS_PER_CYCLE:
+            logger.debug(f"Claude Agent [{symbol}]: skipped — cycle limit ({MAX_CALLS_PER_CYCLE}) reached")
+            return self._last_result.get(symbol, self._neutral())
 
         try:
             prompt = self._build_prompt(
@@ -111,6 +127,7 @@ class ClaudeAgent:
             self._last_call[symbol] = now
             self._last_result[symbol] = result
             self._call_count += 1
+            self._cycle_calls += 1
 
             logger.info(
                 f"Claude Agent [{symbol}]: {result['recommendation']} "
@@ -168,16 +185,19 @@ Respond in this exact JSON format (nothing else):
   "reasoning": "<one sentence, max 100 chars>"
 }}
 
-Be conservative. Only boost score if conditions are genuinely favorable. Penalize if RSI is extreme, volume is weak, or regime is unfavorable for the signal direction."""
+Be balanced. Boost score if multiple layers agree and conditions are favorable. Only penalize significantly if RSI is extreme (>75 or <25), regime is directly opposed to signal direction, or volume is below 0.5x (not just below average). Volume below 1.0x alone is NOT a strong reason to penalize — crypto volume varies naturally. Focus on the overall picture."""
 
     def _parse_response(self, text: str) -> dict:
         """Parse Claude's JSON response."""
+        import re
         try:
             # Extract JSON block if wrapped in markdown
             if "```" in text:
                 text = text.split("```")[1]
                 if text.startswith("json"):
                     text = text[4:]
+            # Fix: JSON doesn't allow leading '+' on numbers (e.g. +0.08 → 0.08)
+            text = re.sub(r':\s*\+(\d)', r': \1', text)
             data = json.loads(text.strip())
             return {
                 "recommendation":  data.get("recommendation", "HOLD"),

@@ -89,6 +89,7 @@ def save_open_positions(positions: dict):
             "entry_time":  pos.entry_time,
             "order_id":    pos.order_id,
             "entry_fee":   pos.entry_fee,
+            "peak_price":  pos.peak_price,  # Trailing stop anchor — survives restarts
         }
         for sym, pos in positions.items()
     }

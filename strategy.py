@@ -144,6 +144,21 @@ class Strategy:
                 explanation="Not enough candle data to analyze.",
             )
 
+        # ─── Drop the last (incomplete) candle ──────────────────────────────
+        # Binance get_klines always returns the current in-progress candle as
+        # the last row.  Its close/volume change every second, so any signal
+        # derived from it is unstable and often captures a transient spike.
+        # We analyse only fully-closed candles; the live price for dashboard
+        # display comes separately from the real-time ticker.
+        df = df.iloc[:-1].copy()
+        if len(df) < 30:
+            return AnalysisResult(
+                signal=Signal.HOLD, symbol=symbol, price=0, rsi=50,
+                ema_fast=0, ema_slow=0, volume_ratio=0,
+                reason="Insufficient closed candles", confidence=0.0,
+                explanation="Not enough closed candle data to analyze.",
+            )
+
         insights = []
 
         # ─── Layer 1: Adaptive Regime Detection ───
@@ -222,7 +237,7 @@ class Strategy:
             rsi=tech_data["rsi"],
             ema_fast=tech_data["ema_fast"],
             ema_slow=tech_data["ema_slow"],
-            volume_ratio=tech_data["volume_ratio"],
+            volume_ratio=tech_data["volume_ratio_completed"],
             regime=adapted.regime,
             base_score=combined_score,
             layer_scores={
@@ -266,6 +281,11 @@ class Strategy:
 
         min_conf = risk_params.get("min_confidence", 0.30)
 
+        # Multiplicador de umbral SELL escalado por nivel de riesgo (0.75x bajo → 1.0x alto)
+        # Nivel bajo = salida más ágil ante señal negativa moderada
+        # Nivel alto = espera más convicción antes de salir (deja correr las ganancias)
+        sell_mult = risk_params.get("sell_threshold_mult", 0.85)
+
         # Block volatile regime entries at low risk levels
         if not risk_params.get("trade_volatile", True) and adapted.regime == "VOLATILE":
             final_signal = Signal.HOLD
@@ -276,8 +296,16 @@ class Strategy:
         elif final_confidence < min_conf:
             final_signal = Signal.HOLD
         elif combined_score > adjusted_threshold:
-            final_signal = Signal.BUY
-        elif combined_score < -adjusted_threshold:
+            # ── Filtro de tendencia bajista confirmada ───────────────────────
+            # Nunca abrir compras cuando el régimen propio es TRENDING con dirección DOWN
+            # (el filtro de correlación BTC en bot.py añade una capa adicional)
+            if adapted.regime == "TRENDING" and getattr(adapted, "trend_direction", "neutral") == "down":
+                final_signal = Signal.HOLD
+            else:
+                final_signal = Signal.BUY
+        elif combined_score < -(adjusted_threshold * sell_mult):
+            # Umbral SELL dinámico: sell_mult × threshold de compra
+            # Más ágil y escalado por nivel de riesgo vs el anterior 0.60× fijo
             final_signal = Signal.SELL
         else:
             final_signal = Signal.HOLD
@@ -298,7 +326,7 @@ class Strategy:
             rsi=tech_data["rsi"],
             ema_fast=tech_data["ema_fast"],
             ema_slow=tech_data["ema_slow"],
-            volume_ratio=tech_data["volume_ratio"],
+            volume_ratio=tech_data["volume_ratio_completed"],  # completed candles → accurate display
             reason=reason,
             confidence=round(final_confidence, 2),
             ai_score=round(combined_score, 3),
@@ -349,10 +377,20 @@ class Strategy:
         score = 0.0
         reasons = []
 
+        # Pre-compute extension % now (used in cross quality check below)
+        price_ext_for_cross = (current_price - current_ema_fast) / current_ema_fast * 100
+
         # 1. EMA crossover (strongest signal)
         if bullish_cross:
-            score += 0.50
-            reasons.append("EMA bullish cross")
+            # If price is already extended at the moment of cross, reduce the bonus —
+            # we're likely entering right at the top of the spike that caused the cross.
+            # A fresh cross with price > 0.8% above EMA is a "late entry" risk.
+            if price_ext_for_cross > 0.8:
+                score += 0.20
+                reasons.append(f"EMA bullish cross (precio extendido +{price_ext_for_cross:.1f}%)")
+            else:
+                score += 0.50
+                reasons.append("EMA bullish cross")
         elif bearish_cross:
             score -= 0.50
             reasons.append("EMA bearish cross")
@@ -391,19 +429,54 @@ class Strategy:
                 if abs(rsi_momentum) > 6:
                     reasons.append(f"RSI {'rising' if rsi_momentum > 0 else 'falling'} ({rsi_momentum:+.1f})")
 
-        # 6. Volume multiplier
-        if volume_confirmed:
+        # 6. Volume multiplier / penalty
+        if current_vol_ratio < 0.30:
+            # Hard penalty for very low volume — signal is unreliable
+            score *= 0.50
+            reasons.append(f"Vol muy baja {current_vol_ratio:.2f}x")
+        elif volume_confirmed:
             score *= 1.25
             reasons.append(f"Vol {current_vol_ratio:.1f}x")
 
+        # 7. Pullback-to-EMA quality filter
+        # Ideal entry: price near the fast EMA (pullback to support after crossover).
+        # Penaliza entrar cuando el precio ya se extendió demasiado arriba.
+        price_ext_pct = (current_price - current_ema_fast) / current_ema_fast * 100
+        if ema_bullish:
+            if price_ext_pct > 1.5:
+                # Price too far above EMA — chasing a move, bad entry risk
+                score -= 0.25
+                reasons.append(f"Precio extendido +{price_ext_pct:.1f}% sobre EMA")
+            elif 0.0 <= price_ext_pct <= 0.5:
+                # Price near EMA — pullback to support, ideal entry zone
+                score += 0.15
+                reasons.append(f"Pullback a EMA ({price_ext_pct:.2f}%)")
+        elif not ema_bullish:
+            if price_ext_pct < -1.5:
+                # Price too far below EMA — oversold bounce chasing
+                score += 0.25  # This is bearish EMA but deep oversold
+                reasons.append(f"Precio extendido {price_ext_pct:.1f}% bajo EMA")
+
+        # 8. RSI trend direction for bullish signals
+        # Don't buy when RSI is falling — wait for RSI to turn upward
+        if score > 0.10 and rsi_momentum < -3:
+            score *= 0.65
+            reasons.append(f"RSI cayendo ({rsi_momentum:+.1f})")
+
         score = max(-1, min(1, score))
+
+        # Use avg of last 3 COMPLETED candles for volume ratio passed to Claude Agent
+        # (current candle may be partially formed → artificially low volume)
+        completed_vol_ratio = float(vol_ratio.iloc[-4:-1].mean()) if len(vol_ratio) >= 4 else current_vol_ratio
+        completed_vol_ratio = round(completed_vol_ratio, 2)
 
         tech_data = {
             "price": current_price,
             "rsi": round(current_rsi, 1),
             "ema_fast": round(current_ema_fast, 2),
             "ema_slow": round(current_ema_slow, 2),
-            "volume_ratio": round(current_vol_ratio, 2),
+            "volume_ratio": current_vol_ratio,          # for technical scoring
+            "volume_ratio_completed": completed_vol_ratio,  # for Claude Agent
         }
 
         detail = " + ".join(reasons) if reasons else "Neutral technicals"
@@ -436,30 +509,50 @@ class Strategy:
                 confidence=0.0, details="Sentiment unavailable",
             )
 
-    def _analyze_ml(self, df: pd.DataFrame, symbol: str) -> AIInsight:
-        """Layer 3: Machine Learning prediction."""
+    def get_fear_greed(self) -> dict:
+        """Return the cached Fear & Greed Index data (no extra API call if cached)."""
         try:
+            score, value, label = self.sentiment._fear_greed_index()
+            return {"value": value, "label": label, "score": round(score, 3)}
+        except Exception:
+            return {"value": 0, "label": "Unavailable", "score": 0.0}
+
+    def _analyze_ml(self, df: pd.DataFrame, symbol: str) -> AIInsight:
+        """Layer 3: Machine Learning prediction con aprendizaje de resultados reales."""
+        try:
+            # Umbral reducido a 80 muestras (corrige bug: antes nunca entrenaba con 100 candles)
+            MIN_TRAIN = 80
             # Train if not trained yet
-            if not self._ml_trained.get(symbol) and len(df) >= 200:
+            if not self._ml_trained.get(symbol) and len(df) >= MIN_TRAIN:
                 metrics = self.ml.train(df, symbol)
                 if metrics.get("status") == "trained":
                     self._ml_trained[symbol] = True
                     logger.info(f"ML model trained for {symbol}: accuracy={metrics['accuracy']:.1%}")
 
-            # Auto-retrain if needed
-            if self.ml.should_retrain(symbol) and len(df) >= 200:
+            # Auto-retrain if needed (cada 20 candles en vez de 50 → más ágil)
+            if self.ml.should_retrain(symbol) and len(df) >= MIN_TRAIN:
                 self.ml.train(df, symbol)
+                self.ml._candle_count[symbol] = 0  # reset counter
 
             # Predict
             pred = self.ml.predict(df, symbol)
 
             if pred["status"] == "ok":
+                # ── Aprendizaje de resultados reales ──────────────────────────
+                # Ajusta la confianza del ML según el win rate reciente del par
+                feedback_mult = self.ml.get_feedback_confidence_multiplier(symbol)
+                # Cap ML score at ±0.30 — evita que el ML domine el score combinado
+                # (sin cap llegaba a ±0.50, aportando el 87% del umbral por sí solo)
+                raw_score = pred["score"] * feedback_mult
+                adj_score = round(max(-0.30, min(0.30, raw_score)), 3)
+                adj_conf  = round(min(pred["confidence"] * feedback_mult, 1.0), 3)
+                feedback_tag = f" feedback:{feedback_mult:.2f}x" if feedback_mult != 1.0 else ""
                 return AIInsight(
                     source="ML Model",
-                    score=pred["score"],
+                    score=adj_score,
                     signal=pred["prediction"],
-                    confidence=pred["confidence"],
-                    details=f"ML: {pred['prediction']} ({pred['probability']:.0%} prob, model acc: {pred['model_accuracy']:.0%})",
+                    confidence=adj_conf,
+                    details=f"ML: {pred['prediction']} ({pred['probability']:.0%} prob, acc:{pred['model_accuracy']:.0%}{feedback_tag})",
                 )
         except Exception as e:
             logger.debug(f"ML prediction failed: {e}")
@@ -605,13 +698,17 @@ class Strategy:
     def check_stop_loss_take_profit(
         self, entry_price: float, current_price: float, side: str,
         adapted_sl: float = None, adapted_tp: float = None,
+        partial_tp_taken: bool = False,
     ) -> Optional[str]:
         """
         Check SL/TP with adaptive values, accounting for transaction costs.
 
-        The P&L comparison includes round-trip fees + estimated slippage,
-        so a 3% TP with 0.2% fees + 0.05% slippage triggers at 3.25% gross movement.
-        Stop loss triggers earlier to protect against real losses.
+        Partial TP logic (when config.partial_tp_enabled):
+          - PARTIAL_TP fires at net_pnl >= tp/2  (e.g. 6.25% TP → fires at 3.125%)
+          - After PARTIAL_TP taken, full TAKE_PROFIT fires at original tp target
+          - Trailing stop still active on remaining position
+
+        Returns: "STOP_LOSS" | "TAKE_PROFIT" | "PARTIAL_TP" | None
         """
         sl = adapted_sl or self.config.stop_loss_pct
         tp = adapted_tp or self.config.take_profit_pct
@@ -627,14 +724,21 @@ class Strategy:
         # Net P&L after costs
         net_pnl_pct = pnl_pct - cost_drag
 
-        # SL: trigger based on NET loss (costs make real loss worse)
+        # SL: trigger based on NET loss
         if net_pnl_pct <= -sl:
-            logger.info(f"SL check: gross {pnl_pct:+.2f}% - costs {cost_drag:.2f}% = net {net_pnl_pct:+.2f}% (limit: -{sl}%)")
+            logger.info(f"SL: gross {pnl_pct:+.2f}% → net {net_pnl_pct:+.2f}% (limit: -{sl}%)")
             return "STOP_LOSS"
 
-        # TP: trigger based on NET profit (need to clear costs before real profit)
+        # Partial TP: fire at 50% of TP target (only once, before full TP)
+        if self.config.partial_tp_enabled and not partial_tp_taken:
+            partial_target = tp / 2
+            if net_pnl_pct >= partial_target:
+                logger.info(f"PARTIAL_TP: net {net_pnl_pct:+.2f}% ≥ {partial_target:.2f}% (50% of TP {tp}%)")
+                return "PARTIAL_TP"
+
+        # Full TP: trigger based on NET profit
         if net_pnl_pct >= tp:
-            logger.info(f"TP check: gross {pnl_pct:+.2f}% - costs {cost_drag:.2f}% = net {net_pnl_pct:+.2f}% (target: +{tp}%)")
+            logger.info(f"TP: gross {pnl_pct:+.2f}% → net {net_pnl_pct:+.2f}% (target: +{tp}%)")
             return "TAKE_PROFIT"
 
         return None

@@ -29,9 +29,11 @@ logger = logging.getLogger("celerity.ml")
 # Prediction horizon: how many candles ahead to predict
 PREDICTION_HORIZON = 6  # 6 x 5min = 30 minutes ahead
 # Minimum candles needed to train
-MIN_TRAIN_SAMPLES = 200
+# CORREGIDO: 200 → 80 (con lookback=150, teníamos ~130 candles útiles; 200 nunca se alcanzaba)
+MIN_TRAIN_SAMPLES = 80
 # Retrain every N new candles
-RETRAIN_INTERVAL = 50
+# CORREGIDO: 50 → 20 (reentrenamiento cada ~1.7h en vez de cada ~4h → más ágil)
+RETRAIN_INTERVAL = 20
 
 
 class FeatureEngineer:
@@ -281,6 +283,56 @@ class MLPredictor:
     def should_retrain(self, symbol: str) -> bool:
         """Check if model needs retraining."""
         return self._candle_count.get(symbol, 0) >= RETRAIN_INTERVAL
+
+    def get_feedback_confidence_multiplier(self, symbol: str) -> float:
+        """
+        Aprende del historial de trades reales (ml_feedback.json).
+
+        Ajusta la confianza del modelo según el win rate reciente del par:
+          - Win rate ≥ 60%  → multiplica hasta 1.20× (el modelo está funcionando bien)
+          - Win rate ~ 40%  → multiplica 0.90× (rendimiento regular, ligera penalización)
+          - Win rate ≤ 25%  → multiplica 0.55× (el modelo está fallando, reduce su peso)
+          - < 5 trades      → neutral (sin datos suficientes)
+
+        Retorna float entre 0.55 y 1.20.
+        """
+        try:
+            import persistence
+            feedback = persistence.load_ml_feedback()
+            # Filtrar por símbolo
+            sym_feedback = [f for f in feedback if f.get("symbol") == symbol]
+            recent = sym_feedback[-20:]  # Últimos 20 trades del par
+
+            if len(recent) < 5:
+                return 1.0  # Sin datos suficientes — neutral
+
+            win_rate = sum(1 for f in recent if f.get("profitable", False)) / len(recent)
+
+            # Pesos más recientes tienen más influencia (recency weighting)
+            weighted_wins = 0.0
+            total_weight  = 0.0
+            for i, fb in enumerate(recent):
+                w = 1.0 + (i / len(recent)) * 0.5  # más reciente → mayor peso
+                total_weight  += w
+                if fb.get("profitable", False):
+                    weighted_wins += w
+            weighted_win_rate = weighted_wins / total_weight if total_weight > 0 else win_rate
+
+            # Mapear win rate → multiplicador (0.55 – 1.20)
+            # 0%  → 0.55 | 50% → 0.90 | 100% → 1.20
+            multiplier = 0.55 + weighted_win_rate * 0.65
+            multiplier = round(min(1.20, max(0.55, multiplier)), 2)
+
+            if multiplier != 1.0:
+                logger.debug(
+                    f"ML feedback [{symbol}]: win_rate={weighted_win_rate:.0%} "
+                    f"(n={len(recent)}) → confidence ×{multiplier}"
+                )
+            return multiplier
+
+        except Exception as e:
+            logger.debug(f"ML feedback multiplier error for {symbol}: {e}")
+            return 1.0
 
 
 # ─── Simple Gradient Boosted Model (no sklearn needed) ───

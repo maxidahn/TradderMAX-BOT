@@ -105,6 +105,20 @@
         .chk-msg{font-size:12px;font-weight:600;color:#e0e6ed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .chk-detail{font-size:10px;color:#5a7184;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+        /* Portfolio Total meter */
+        .portfolio-total-wrap{background:linear-gradient(135deg,#0d1520,#111f2e);border:1px solid #1e3a52;border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+        .portfolio-main{display:flex;align-items:baseline;gap:10px}
+        .portfolio-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#5a7184}
+        .portfolio-amount{font-size:36px;font-weight:800;color:#00d4aa;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+        .portfolio-sub{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px}
+        .portfolio-sub-item{font-size:11px;color:#7a8ea0}
+        .portfolio-sub-item strong{color:#c0ccd8}
+        .portfolio-breakdown{display:flex;gap:8px;flex-wrap:wrap}
+        .port-asset{background:#0a1520;border:1px solid #1e2d3d;border-radius:6px;padding:5px 10px;font-size:11px;text-align:center;min-width:68px}
+        .port-asset-name{color:#5a7184;font-size:9px;text-transform:uppercase;letter-spacing:1px}
+        .port-asset-val{font-weight:700;color:#c0ccd8;margin-top:1px}
+        .port-asset-price{font-size:9px;color:#3a5a70;margin-top:1px}
+
         /* Risk profile card */
         .risk-param-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
         .risk-param-box{background:#0d1520;border-radius:8px;padding:10px 12px;text-align:center;border:1px solid #1e2d3d}
@@ -193,15 +207,49 @@
     <!-- Account Balance -->
     <div class="card full-width" id="balance-section" style="display:none">
         <div class="card-title">Binance Account Balance</div>
+        <!-- Portfolio Total Meter -->
+        <div class="portfolio-total-wrap" id="portfolio-wrap">
+            <div>
+                <div class="portfolio-label">Portfolio Total</div>
+                <div class="portfolio-main">
+                    <div class="portfolio-amount" id="portfolio-total">—</div>
+                    <div id="portfolio-change" style="font-size:13px;color:#5a7184"></div>
+                </div>
+                <div class="portfolio-sub" id="portfolio-sub">
+                    <div class="portfolio-sub-item">Stablecoins: <strong id="port-stable">—</strong></div>
+                    <div class="portfolio-sub-item">Crypto: <strong id="port-crypto">—</strong></div>
+                </div>
+            </div>
+            <div class="portfolio-breakdown" id="portfolio-breakdown"></div>
+        </div>
         <div class="info-grid" id="balance-grid"></div>
     </div>
 
     <!-- Stats -->
     <div class="card full-width">
         <div class="card-title">Performance</div>
+
+        <!-- ── HOY ──────────────────────────────────────────────── -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#ffa502;background:#1a1500;border:1px solid #ffa50240;border-radius:4px;padding:2px 8px">HOY</span>
+            <span id="stat-daily-date" style="font-size:11px;color:#5a7184"></span>
+        </div>
+        <div class="info-grid" style="margin-bottom:14px">
+            <div class="info-item"><div class="info-label">P&amp;L Hoy</div><div class="info-value neutral" id="stat-daily-pnl">$0.00</div></div>
+            <div class="info-item"><div class="info-label">Trades Hoy</div><div class="info-value neutral" id="stat-daily-trades">0</div></div>
+            <div class="info-item"><div class="info-label">Win Rate Hoy</div><div class="info-value neutral" id="stat-daily-winrate">0%</div></div>
+            <div class="info-item"><div class="info-label">Fees Hoy</div><div class="info-value neutral" id="stat-daily-fees">$0.00</div></div>
+            <div class="info-item"><div class="info-label">Mejor Trade</div><div class="info-value neutral" id="stat-daily-best">—</div></div>
+            <div class="info-item"><div class="info-label">Peor Trade</div><div class="info-value neutral" id="stat-daily-worst">—</div></div>
+        </div>
+
+        <!-- ── TOTAL ─────────────────────────────────────────────── -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;border-top:1px solid #1e2d3d;padding-top:12px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#00d4aa;background:#001a15;border:1px solid #00d4aa40;border-radius:4px;padding:2px 8px">TOTAL</span>
+        </div>
         <div class="info-grid">
             <div class="info-item"><div class="info-label">AI Score</div><div class="info-value neutral" id="stat-ai">0.000</div></div>
-            <div class="info-item"><div class="info-label">Total P&L</div><div class="info-value neutral" id="stat-pnl">$0.00</div></div>
+            <div class="info-item"><div class="info-label">P&amp;L Total</div><div class="info-value neutral" id="stat-pnl">$0.00</div></div>
             <div class="info-item"><div class="info-label">Trades</div><div class="info-value neutral" id="stat-trades">0</div></div>
             <div class="info-item"><div class="info-label">Win Rate</div><div class="info-value neutral" id="stat-winrate">0%</div></div>
             <div class="info-item"><div class="info-label">Positions</div><div class="info-value neutral" id="stat-positions">0</div></div>
@@ -221,6 +269,31 @@
         <div class="card">
             <div class="card-title">Trading Pairs</div>
             <div id="pairs-container"></div>
+            <!-- Fear & Greed Index widget -->
+            <div id="fg-section" style="margin-top:12px;padding-top:10px;border-top:1px solid #1e2d3d">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <div class="card-title" style="margin-bottom:0">Fear &amp; Greed Index</div>
+                    <span id="fg-label" style="font-size:10px;font-weight:700;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;background:#1e2d3d;color:#5a7184">—</span>
+                </div>
+                <div style="position:relative;height:10px;background:#0d1821;border-radius:6px;overflow:hidden;margin-bottom:6px">
+                    <!-- gradient bar: red → orange → yellow → lime → green -->
+                    <div style="position:absolute;inset:0;background:linear-gradient(to right,#ff4757,#ffa502,#ffd700,#7bed9f,#00d4aa);border-radius:6px;opacity:0.35"></div>
+                    <!-- filled portion -->
+                    <div id="fg-bar" style="position:absolute;top:0;left:0;height:100%;width:50%;background:linear-gradient(to right,#ff4757,#ffa502,#ffd700,#7bed9f,#00d4aa);border-radius:6px;transition:width 0.5s"></div>
+                    <!-- needle marker -->
+                    <div id="fg-needle" style="position:absolute;top:-1px;width:3px;height:12px;background:#e0e6ed;border-radius:2px;transform:translateX(-50%);left:50%;transition:left 0.5s;box-shadow:0 0 4px #00000080"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:9px;color:#3a5170;margin-bottom:8px">
+                    <span>Extreme Fear</span><span>Fear</span><span>Neutral</span><span>Greed</span><span>Extreme Greed</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:6px">
+                    <span id="fg-value" style="font-size:26px;font-weight:800;color:#5a7184">—</span>
+                    <span style="font-size:11px;color:#5a7184">/ 100</span>
+                    <span id="fg-score" style="font-size:11px;color:#5a7184;margin-left:auto">score —</span>
+                </div>
+                <div style="font-size:10px;color:#3a5170;margin-top:2px">Alternative.me · actualiza diariamente</div>
+            </div>
+
             <div style="margin-top:12px;padding-top:10px;border-top:1px solid #1e2d3d">
                 <div class="card-title" style="margin-bottom:6px">AI Strategy</div>
                 <div style="font-size:11px;color:#7a8ea0;line-height:1.65">
@@ -235,8 +308,17 @@
 
         <!-- Trade History -->
         <div class="card">
-            <div class="card-title">Trade History</div>
-            <div class="trade-list" id="trade-history"><span style="color:#5a7184;font-size:12px">No trades yet</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div class="card-title" style="margin-bottom:0">Trade History</div>
+                <div style="display:flex;gap:4px">
+                    <button id="th-tab-hoy" onclick="switchTradeTab('hoy')"
+                        style="font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #ffa502;background:#1a1500;color:#ffa502;cursor:pointer">HOY</button>
+                    <button id="th-tab-total" onclick="switchTradeTab('total')"
+                        style="font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #1e2d3d;background:transparent;color:#5a7184;cursor:pointer">TOTAL</button>
+                </div>
+            </div>
+            <div class="trade-list" id="trade-history-hoy"><span style="color:#5a7184;font-size:12px">Sin trades hoy</span></div>
+            <div class="trade-list" id="trade-history-total" style="display:none"><span style="color:#5a7184;font-size:12px">No trades yet</span></div>
         </div>
     </div>
 
@@ -374,6 +456,22 @@ async function setRiskLevel(v){
 
 function symName(s){return s.replace(/USDC$|USDT$|BUSD$/,'');}
 
+function switchTradeTab(tab){
+    const hoyList=document.getElementById('trade-history-hoy');
+    const totalList=document.getElementById('trade-history-total');
+    const btnHoy=document.getElementById('th-tab-hoy');
+    const btnTotal=document.getElementById('th-tab-total');
+    if(tab==='hoy'){
+        hoyList.style.display='';totalList.style.display='none';
+        btnHoy.style.cssText='font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #ffa502;background:#1a1500;color:#ffa502;cursor:pointer';
+        btnTotal.style.cssText='font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #1e2d3d;background:transparent;color:#5a7184;cursor:pointer';
+    } else {
+        hoyList.style.display='none';totalList.style.display='';
+        btnTotal.style.cssText='font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #00d4aa;background:#001a15;color:#00d4aa;cursor:pointer';
+        btnHoy.style.cssText='font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:4px;border:1px solid #1e2d3d;background:transparent;color:#5a7184;cursor:pointer';
+    }
+}
+
 async function refreshReadiness(){
     try{
         const r=await fetch('/api/readiness');
@@ -462,12 +560,49 @@ function update(d){
         </div>`;
     }
 
+    // ── TOTAL metrics ─────────────────────────────────────────────
     const pnl=sum.total_pnl_net,pe=document.getElementById('stat-pnl');
     pe.textContent='$'+pnl.toFixed(4);pe.className='info-value '+(pnl>0?'positive':pnl<0?'negative':'neutral');
     document.getElementById('stat-trades').textContent=sum.total_trades;
     document.getElementById('stat-winrate').textContent=sum.win_rate+'%';
     document.getElementById('stat-positions').textContent=Object.keys(trader.open_positions).length;
     document.getElementById('stat-time').textContent=bot.current_time_et;
+
+    // ── DAILY metrics ─────────────────────────────────────────────
+    const dy=sum.daily||{};
+    // Date badge
+    const todayStr=new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'short'});
+    const ddEl=document.getElementById('stat-daily-date');
+    if(ddEl) ddEl.textContent=todayStr;
+    // P&L hoy
+    const dpnl=dy.pnl||0,dpe=document.getElementById('stat-daily-pnl');
+    if(dpe){dpe.textContent='$'+dpnl.toFixed(4);dpe.className='info-value '+(dpnl>0?'positive':dpnl<0?'negative':'neutral');}
+    // Trades hoy
+    const dte=document.getElementById('stat-daily-trades');
+    if(dte) dte.textContent=dy.trades||0;
+    // Win rate hoy
+    const dwr=document.getElementById('stat-daily-winrate');
+    if(dwr){
+        const wrVal=dy.win_rate||0;
+        dwr.textContent=wrVal+'%';
+        dwr.className='info-value '+(wrVal>=55?'positive':wrVal>0&&wrVal<40?'negative':'neutral');
+    }
+    // Fees hoy
+    const dfe=document.getElementById('stat-daily-fees');
+    if(dfe) dfe.textContent='$'+(dy.fees||0).toFixed(4);
+    // Mejor / Peor trade hoy
+    const dbest=document.getElementById('stat-daily-best');
+    if(dbest&&dy.best_trade){
+        const b=dy.best_trade;
+        dbest.textContent=b.symbol.replace('USDC','')+'  '+(b.pnl_pct>=0?'+':'')+b.pnl_pct+'%';
+        dbest.className='info-value positive';
+    } else if(dbest) {dbest.textContent='—';dbest.className='info-value neutral';}
+    const dworst=document.getElementById('stat-daily-worst');
+    if(dworst&&dy.worst_trade){
+        const w=dy.worst_trade;
+        dworst.textContent=w.symbol.replace('USDC','')+'  '+(w.pnl_pct>=0?'+':'')+w.pnl_pct+'%';
+        dworst.className='info-value '+(w.pnl_pct<0?'negative':'neutral');
+    } else if(dworst) {dworst.textContent='—';dworst.className='info-value neutral';}
 
     // Sync risk slider + profile with server state
     if(bot.risk_level!==undefined){
@@ -591,13 +726,53 @@ function update(d){
         </div>`;
     }
 
-    // Trades
-    const th=document.getElementById('trade-history'),trades=trader.trade_history;
-    if(trades.length){th.innerHTML='';
-        for(const t of [...trades].reverse().slice(0,20)){
+    // Trades — render both HOY and TOTAL lists
+    const allTrades=trader.trade_history||[];
+    const todayIso=new Date().toISOString().slice(0,10);
+    const todayTrades=allTrades.filter(t=>t.timestamp&&t.timestamp.slice(0,10)===todayIso);
+
+    function renderTradeList(el, list, emptyMsg){
+        if(!el) return;
+        if(!list.length){el.innerHTML=`<span style="color:#5a7184;font-size:12px">${emptyMsg}</span>`;return;}
+        el.innerHTML='';
+        for(const t of [...list].reverse().slice(0,30)){
             const c=t.pnl_net>=0?'positive':'negative',s=t.pnl_net>=0?'+':'';
-            th.innerHTML+=`<div class="trade-item"><span style="font-weight:600">${symName(t.symbol)}</span><span>${t.side}</span><span>$${t.price.toFixed(2)}</span><span class="${c}" style="font-weight:600">${s}$${t.pnl_net.toFixed(4)}</span><span style="color:#5a7184;font-size:10px">${t.reason}</span></div>`;
+            const timeStr=t.timestamp?t.timestamp.slice(11,16):'';
+            el.innerHTML+=`<div class="trade-item">
+                <span style="font-weight:600">${symName(t.symbol)}</span>
+                <span>${t.side}</span>
+                <span>$${t.price.toFixed(2)}</span>
+                <span class="${c}" style="font-weight:600">${s}$${t.pnl_net.toFixed(4)}</span>
+                <span style="color:#5a7184;font-size:10px">${t.reason}</span>
+                ${timeStr?`<span style="color:#3a5170;font-size:9px">${timeStr}</span>`:''}
+            </div>`;
         }
+    }
+    renderTradeList(document.getElementById('trade-history-hoy'),   todayTrades, 'Sin trades hoy');
+    renderTradeList(document.getElementById('trade-history-total'),  allTrades,   'No trades yet');
+
+    // Update HOY tab badge count
+    const thBtn=document.getElementById('th-tab-hoy');
+    if(thBtn&&todayTrades.length) thBtn.textContent=`HOY (${todayTrades.length})`;
+
+    // Fear & Greed Index
+    const fg=d.fear_greed||{};
+    if(fg.value!==undefined && fg.value>0){
+        const fgVal=fg.value;
+        const fgLabel=fg.label||'—';
+        const fgScore=fg.score||0;
+        // Color by zone
+        const fgColor=fgVal<=25?'#ff4757':fgVal<=45?'#ffa502':fgVal<=55?'#ffd700':fgVal<=75?'#7bed9f':'#00d4aa';
+        document.getElementById('fg-value').textContent=fgVal;
+        document.getElementById('fg-value').style.color=fgColor;
+        document.getElementById('fg-label').textContent=fgLabel;
+        document.getElementById('fg-label').style.color=fgColor;
+        document.getElementById('fg-label').style.background=fgColor+'22';
+        document.getElementById('fg-label').style.borderColor=fgColor+'40';
+        document.getElementById('fg-score').textContent='score '+(fgScore>=0?'+':'')+fgScore.toFixed(2);
+        document.getElementById('fg-score').style.color=fgColor;
+        document.getElementById('fg-bar').style.width=fgVal+'%';
+        document.getElementById('fg-needle').style.left=fgVal+'%';
     }
 
     // Logs
@@ -609,8 +784,39 @@ function update(d){
         }lc.scrollTop=lc.scrollHeight;}
 }
 
+async function refreshPortfolio(){
+    try{
+        const d=await (await fetch('/api/portfolio')).json();
+        if(d.error||d.total===undefined){
+            document.getElementById('portfolio-total').textContent='—';
+            return;
+        }
+        const fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        document.getElementById('portfolio-total').textContent=fmt(d.total);
+        document.getElementById('port-stable').textContent=fmt(d.stablecoins);
+        document.getElementById('port-crypto').textContent=fmt(d.crypto_value);
+
+        // Breakdown tiles — only crypto assets with a known price
+        const tiles=d.breakdown.filter(x=>x.type==='crypto'&&x.value_usd!=null);
+        const bk=document.getElementById('portfolio-breakdown');
+        bk.innerHTML='';
+        for(const a of tiles){
+            const val=fmt(a.value_usd);
+            const priceStr=a.price>=1000?'$'+a.price.toLocaleString('en-US',{maximumFractionDigits:0})
+                :a.price>=1?'$'+a.price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+                :'$'+a.price.toFixed(4);
+            bk.innerHTML+=`<div class="port-asset">
+                <div class="port-asset-name">${a.asset}</div>
+                <div class="port-asset-val">${val}</div>
+                <div class="port-asset-price">${priceStr} × ${a.amount>=1?a.amount.toFixed(3):a.amount.toFixed(6)}</div>
+            </div>`;
+        }
+    }catch(e){}
+}
+
 refresh();setInterval(refresh,3000);
 refreshReadiness();setInterval(refreshReadiness,300000);
+refreshPortfolio();setInterval(refreshPortfolio,5000);
 </script>
 </body>
 </html>
