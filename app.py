@@ -9,6 +9,13 @@ import os
 import sys
 from flask import Flask, render_template, jsonify, request
 
+# Load .env before anything else so API keys are available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed — fall back to env vars already set
+
 from config import config
 from bot import CelerityBot
 import persistence
