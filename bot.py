@@ -325,10 +325,14 @@ class CelerityBot:
                             self.telegram.take_profit(symbol, record.price, record.pnl, record.pnl_pct)
                     continue  # Position closed — skip trailing/timeout for this symbol
 
-                # ── 2. Trailing stop — only activates after position is in profit
-                # (peak must be ≥ 0.5% above entry to cover fees before trailing fires)
+                # ── 2. Trailing stop — solo activa después de ganancia mínima real
+                # Piso elevado a 1.5%: evita que el trailing stop cierre posiciones
+                # que apenas subieron y luego retraen (la causa principal de las
+                # 10 salidas de trailing stop con pérdida promedio de -0.78%).
+                # Con 1.5% de ganancia confirmada, el trailing stop como mínimo
+                # protege el breakeven neto (fees ~0.2% + slippage ~0.05%).
                 peak_gain_pct = (pos.peak_price - pos.entry_price) / pos.entry_price * 100
-                if trail_pct > 0 and peak_gain_pct >= 0.5:
+                if trail_pct > 0 and peak_gain_pct >= 1.5:
                     drawdown_pct = (pos.peak_price - current_price) / pos.peak_price * 100
                     if drawdown_pct >= trail_pct:
                         self._log("INFO",
@@ -346,8 +350,9 @@ class CelerityBot:
                 # ── 3. Timeout dinámico: posición en pérdida continua ─────────
                 # Si la posición lleva ≥ LOSS_TIMEOUT horas y el precio NUNCA superó
                 # un 0.1% por encima de la entrada (peak ≈ entry), cierra a mercado.
-                # Evita quedar atrapado esperando hasta las 24h del timeout estándar.
-                LOSS_TIMEOUT_H = 4.0   # horas antes de cerrar posición que nunca subió
+                # Subido de 4h a 8h: los trades ganadores duran en promedio 9.5h,
+                # con 4h se cerraban demasiado pronto trades que podían recuperarse.
+                LOSS_TIMEOUT_H = 8.0   # horas antes de cerrar posición que nunca subió
                 PEAK_THRESHOLD = 1.001  # peak debe haber sido al menos +0.1% para NO cerrar
                 if pos.entry_time:
                     try:
@@ -539,10 +544,29 @@ class CelerityBot:
             if result.signal == Signal.BUY and pair.symbol not in self.trader.positions:
                 risk_params = self.config.get_risk_params()
 
+                # ══ FILTRO HORARIO: bloquear horas con win rate histórico 0% ═══
+                # Análisis de 65 trades reales identificó 4 ventanas donde el bot
+                # nunca ganó (0% WR con 4-5 trades cada una). No entrar en esas horas.
+                # 04h UTC = madrugada americana profunda (sin liquidez)
+                # 08h UTC = apertura Europa (ruido de apertura)
+                # 16h UTC = cierre Europa / apertura NY (choque de liquidez)
+                # 21h UTC = cierre NY + mercado asiático (baja liquidez)
+                try:
+                    current_hour_utc = datetime.now(timezone.utc).hour
+                    # Bloqueamos ±1h alrededor de cada hora mortal para mayor seguridad
+                    DEAD_HOURS_UTC = {3, 4, 5, 7, 8, 9, 15, 16, 17, 20, 21, 22}
+                    if current_hour_utc in DEAD_HOURS_UTC:
+                        self._log("INFO",
+                            f"{pair.symbol}: BUY bloqueado — HORA MUERTA "
+                            f"({current_hour_utc:02d}:xx UTC, win rate histórico 0%)")
+                        return
+                except Exception:
+                    pass
+
                 # ══ CIRCUIT BREAKER: pérdida diaria máxima ════════════════════
                 # Si perdemos demasiado hoy, pausamos nuevas entradas hasta mañana.
                 # Evita el "tilt" — seguir operando en un mercado que nos va en contra.
-                MAX_DAILY_LOSS = -1.50   # USD — ajustable según capital
+                MAX_DAILY_LOSS = -10.0   # USD — subido de -1.50 a -10.0 (era demasiado restrictivo)
                 try:
                     daily_stats = self.trader.get_daily_stats()
                     daily_pnl   = daily_stats.get("pnl", 0.0)
@@ -622,7 +646,7 @@ class CelerityBot:
                     return
 
                 # ── Filtro RSI techo (no entrar en overbought) ────────────────
-                RSI_BUY_MAX = 63.0   # 60 era demasiado restrictivo — RSI 60-63 no es overbought real
+                RSI_BUY_MAX = 68.0   # 60 era demasiado restrictivo — RSI 60-63 no es overbought real | +2 optimizer 2026-05-06 (64 señales bloqueadas > umbral 8) | +2 optimizer 2026-05-07 (14 señales bloqueadas > umbral 8) | +1 optimizer 2026-05-08 (10 señales bloqueadas > umbral 8, cap 68)
                 if result.rsi > RSI_BUY_MAX:
                     self._log("INFO",
                         f"{pair.symbol}: BUY bloqueado — RSI {result.rsi:.1f} > {RSI_BUY_MAX} (overbought)")
@@ -646,7 +670,7 @@ class CelerityBot:
                 tech_score = next(
                     (ins.score for ins in result.insights if ins.source == "Technical"), None
                 )
-                MIN_TECH_SCORE = 0.12
+                MIN_TECH_SCORE = 0.20   # +0.02 optimizer 2026-05-06 (win_rate 16.7% < 30% con 12 trades) | +0.02 optimizer 2026-05-07 (win_rate 22.2% < 30% con 18 trades) | +0.02 optimizer 2026-05-08 (win_rate 0.0% < 30% con 10 trades) | +0.02 optimizer 2026-05-13 (win_rate 0.0% < 30% con 7 trades)
                 if tech_score is not None and tech_score < MIN_TECH_SCORE:
                     self._log("INFO",
                         f"{pair.symbol}: BUY bloqueado — Technical score {tech_score:.3f} "
@@ -728,12 +752,14 @@ class CelerityBot:
 
             elif result.signal == Signal.SELL and pair.symbol in self.trader.positions:
                 # ── Tiempo mínimo de hold antes de AI Signal SELL ─────────────
-                # Evita salir en el primer retroceso dentro de los primeros 30 min
+                # Elevado a 45 min (antes 30): en velas de 5m, 3 señales SELL
+                # consecutivas = 15 min de señal, pero el mercado necesita más
+                # tiempo para confirmar una reversión real vs ruido puntual.
                 pos = self.trader.positions[pair.symbol]
                 try:
                     entry_dt   = datetime.fromisoformat(pos.entry_time.replace("Z", "+00:00"))
                     hold_min   = (datetime.now(timezone.utc) - entry_dt).total_seconds() / 60
-                    MIN_HOLD_MIN = 30.0
+                    MIN_HOLD_MIN = 45.0
                     if hold_min < MIN_HOLD_MIN:
                         self._log("INFO",
                             f"{pair.symbol}: SELL bloqueado — posición abierta hace {hold_min:.0f} min "
@@ -742,7 +768,20 @@ class CelerityBot:
                 except Exception:
                     pass  # si falla el parse, dejamos pasar el SELL
 
-                # ── Debounce: requiere 2 ciclos consecutivos de SELL antes de ejecutar ─
+                # ── Filtro de score mínimo para SELL ─────────────────────────
+                # No cerrar una posición BUY por un SELL débil. Requiere score
+                # genuinamente negativo (< -0.30) para ejecutar la salida.
+                # Antes: cualquier score negativo que superara el umbral básico.
+                # Ahora: exige convicción real — reducirá los 20 AI-SELL con pérdida.
+                SELL_SCORE_GATE = -0.30
+                if result.ai_score > SELL_SCORE_GATE:
+                    self._log("INFO",
+                        f"{pair.symbol}: SELL bloqueado — score {result.ai_score:+.3f} "
+                        f"> {SELL_SCORE_GATE} (señal débil, sin convicción suficiente)")
+                    self._consecutive_sell[pair.symbol] = 0  # reset debounce
+                    return
+
+                # ── Debounce: requiere 3 ciclos consecutivos de SELL antes de ejecutar ─
                 # Evita salidas prematuras por una sola vela negativa
                 self._consecutive_sell[pair.symbol] = self._consecutive_sell.get(pair.symbol, 0) + 1
                 consecutive = self._consecutive_sell[pair.symbol]
@@ -751,7 +790,7 @@ class CelerityBot:
                         f"{pair.symbol}: SELL señal {consecutive}/3 — esperando confirmación "
                         f"(AI score: {result.ai_score:+.3f})")
                     return
-                # 3+ consecutive SELL signals → execute
+                # 3+ consecutive SELL signals con score < -0.30 → execute
                 self._consecutive_sell[pair.symbol] = 0
                 # SELLs are always automatic — waiting for approval risks capital in fast markets
                 self._log("INFO", f"{pair.symbol}: AUTO SELL confirmado (AI score: {result.ai_score:+.3f})")

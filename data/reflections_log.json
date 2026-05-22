@@ -1,0 +1,24 @@
+{
+  "history": [
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 60.0,
+      "reasoning": "Trade exited on timeout with minimal profit; reducing hold time prevents capital lock-up.",
+      "timestamp": "2026-05-18T17:45:40.540152+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "sl_pct",
+      "direction": "up",
+      "delta": 0.5,
+      "reasoning": "SL hit after 87min on valid setup (ADX24, RSI32, vol1.8x); stop too tight at 1.5%",
+      "timestamp": "2026-05-18T19:52:13.529279+00:00"
+    }
+  ],
+  "stats": {
+    "calls": 2,
+    "applied": 0
+  }
+}

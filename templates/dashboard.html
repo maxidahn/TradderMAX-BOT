@@ -329,6 +329,119 @@
             <div><span class="log-time">[--:--]</span> <span class="log-info">Dashboard loaded. Press Start.</span></div>
         </div>
     </div>
+
+    <!-- ══════════ AGENTS (FUTURES) MODULE ══════════ -->
+    <!-- Visible solo si /api/agents/status devuelve enabled=true -->
+    <div class="card full-width" id="agents-section" style="display:none;border-top:3px solid #ff8c00">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div class="card-title" style="margin-bottom:0;color:#ff8c00">⚡ Agents Module — Binance Futures</div>
+                <span class="badge" id="agents-mode-badge" style="background:#3a2a1a;color:#ffa502;border:1px solid #ffa50240">PAPER</span>
+                <span class="badge" id="agents-running-badge" style="background:#1a3a2a;color:#00d4aa;border:1px solid #00d4aa40">STOPPED</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <div class="mode-toggle" title="Paper-trade ↔ órdenes reales">
+                    <span class="mode-label">Paper</span>
+                    <div class="toggle" id="agents-paper-toggle" onclick="toggleAgentsPaper()"></div>
+                    <span class="mode-label" style="color:#ff4757">Live $$$</span>
+                </div>
+                <button class="btn btn-start btn-sm" id="agents-btn-start" onclick="agentsAction('start')" title="Solo necesario si lo detuviste manualmente — arranca automático con el bot">Start</button>
+                <button class="btn btn-stop btn-sm"  id="agents-btn-stop"  onclick="agentsAction('stop')" title="Detiene el loop de decisiones (no cierra posiciones abiertas)">Stop</button>
+                <button class="btn btn-pause btn-sm" id="agents-btn-tournament" onclick="runTournament()" title="Fuerza un tournament ahora (sin esperar 5 trades / 6h)">Run Tournament</button>
+            </div>
+        </div>
+        <div style="font-size:11px;color:#7a8ea0;margin-bottom:12px;padding:6px 10px;background:#0d1520;border-radius:6px">
+            ℹ️ El módulo Agents <strong>arranca automáticamente</strong> al levantar el bot. Los botones Start/Stop solo se usan si querés pausar manualmente. El estado real lo ves en el badge <span style="color:#00d4aa">RUNNING</span>.
+        </div>
+
+        <!-- Top KPIs -->
+        <div class="info-grid" style="margin-bottom:14px">
+            <div class="info-item"><div class="info-label">Equity</div><div class="info-value" id="agents-equity">—</div></div>
+            <div class="info-item"><div class="info-label">PnL Hoy</div><div class="info-value" id="agents-daily-pnl">—</div></div>
+            <div class="info-item"><div class="info-label">Trades Totales</div><div class="info-value" id="agents-total-trades">—</div></div>
+            <div class="info-item"><div class="info-label">Win Rate</div><div class="info-value" id="agents-win-rate">—</div></div>
+            <div class="info-item"><div class="info-label">PnL Acumulado</div><div class="info-value" id="agents-total-pnl">—</div></div>
+            <div class="info-item"><div class="info-label">Kill Switch</div><div class="info-value" id="agents-kill-switch">—</div></div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div style="margin-bottom:14px">
+            <div class="card-title">🏆 Leaderboard (Sharpe-like)</div>
+            <div id="agents-leaderboard"><span style="color:#5a7184;font-size:12px">Sin datos todavía</span></div>
+        </div>
+
+        <!-- Last decisions per pair -->
+        <div style="margin-bottom:14px">
+            <div class="card-title">🧠 Última decisión por par</div>
+            <div id="agents-decisions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:10px"></div>
+        </div>
+
+        <!-- Open positions -->
+        <div style="margin-bottom:14px">
+            <div class="card-title">📊 Posiciones abiertas (Futures)</div>
+            <div id="agents-positions"><span style="color:#5a7184;font-size:12px">Sin posiciones</span></div>
+        </div>
+
+        <!-- Recent closed trades -->
+        <div style="margin-bottom:14px">
+            <div class="card-title">📜 Últimos trades cerrados</div>
+            <div id="agents-history" style="max-height:240px;overflow-y:auto"><span style="color:#5a7184;font-size:12px">Sin historial</span></div>
+        </div>
+
+        <!-- Tournament events -->
+        <div style="margin-bottom:14px">
+            <div class="card-title">🧬 Eventos de Tournament</div>
+            <div id="agents-tournament-events" style="max-height:200px;overflow-y:auto"><span style="color:#5a7184;font-size:12px">Sin eventos</span></div>
+        </div>
+
+        <!-- ═══ APRENDIZAJE ACELERADO ═══ -->
+        <div style="border-top:2px dashed #ff8c00;padding-top:14px;margin-top:14px">
+            <div class="card-title" style="color:#ff8c00;margin-bottom:14px">🚀 Aprendizaje Acelerado</div>
+
+            <!-- Safety Phase -->
+            <div id="agents-safety-banner" style="display:none;background:#3a2a1a;border:1px solid #ffa50260;border-radius:8px;padding:12px;margin-bottom:14px"></div>
+
+            <!-- Online ML por agente -->
+            <div style="margin-bottom:14px">
+                <div class="card-title">🧠 Online ML (aprende tras cada trade)</div>
+                <div id="agents-online-ml" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px"></div>
+            </div>
+
+            <!-- Bandit variants -->
+            <div style="margin-bottom:14px">
+                <div class="card-title">🎰 Bandit Variants (paper sintético en paralelo)</div>
+                <div id="agents-bandit"></div>
+            </div>
+
+            <!-- Reflection (Claude post-trade) -->
+            <div style="margin-bottom:14px">
+                <div class="card-title">💭 Reflexiones de Claude (post-trade)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+                    <div class="info-item"><div class="info-label">Llamadas</div><div class="info-value" id="reflection-calls">—</div></div>
+                    <div class="info-item"><div class="info-label">Aplicadas</div><div class="info-value" id="reflection-applied">—</div></div>
+                </div>
+                <div id="agents-reflections" style="max-height:200px;overflow-y:auto"></div>
+            </div>
+
+            <!-- Cross-contagion -->
+            <div style="margin-bottom:14px">
+                <div class="card-title">🦠 Cross-Contagion (boost en tiempo real entre agentes)</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
+                    <div class="info-item"><div class="info-label">Eventos activos</div><div class="info-value" id="contagion-active">—</div></div>
+                    <div class="info-item"><div class="info-label">Publicados</div><div class="info-value" id="contagion-pubs">—</div></div>
+                    <div class="info-item"><div class="info-label">Queries</div><div class="info-value" id="contagion-queries">—</div></div>
+                    <div class="info-item"><div class="info-label">Boosts aplicados</div><div class="info-value" id="contagion-boosts">—</div></div>
+                </div>
+                <div id="agents-contagion-events" style="max-height:160px;overflow-y:auto"></div>
+            </div>
+        </div>
+
+        <!-- Agents log -->
+        <div>
+            <div class="card-title">Log Agents</div>
+            <div class="log-console" id="agents-log" style="max-height:160px"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -817,6 +930,386 @@ async function refreshPortfolio(){
 refresh();setInterval(refresh,3000);
 refreshReadiness();setInterval(refreshReadiness,300000);
 refreshPortfolio();setInterval(refreshPortfolio,5000);
+// ═══════════════════════════════════════════════════════════════════════════
+//   AGENTS MODULE — Multi-agent Futures dashboard
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function agentsApi(path, body){
+    try {
+        const opts = {headers:{'Content-Type':'application/json'}};
+        if (body !== undefined) { opts.method='POST'; opts.body = JSON.stringify(body || {}); }
+        const r = await fetch(path, opts);
+        return await r.json();
+    } catch(e){ console.error('agentsApi', path, e); return null; }
+}
+
+async function agentsAction(name){
+    const r = await agentsApi('/api/agents/'+name, {});
+    if (r && r.success !== undefined) console.log('agents action', name, r);
+    refreshAgents();
+}
+
+async function toggleAgentsPaper(){
+    const toggle = document.getElementById('agents-paper-toggle');
+    // toggle.active corresponds to LIVE (because text reads "Paper / Live")
+    // We'll send `paper = !currentlyLive`
+    const goingLive = !toggle.classList.contains('active');
+    if (goingLive) {
+        const ok = confirm(
+            '⚠️ Vas a cambiar a LIVE TRADING.\n\n' +
+            'Los agentes van a ejecutar órdenes REALES en Binance Futures.\n' +
+            'Asegurate de tener saldo USDT en la billetera de FUTURES (no spot)\n' +
+            'y de que el leverage cap está configurado.\n\n' +
+            '¿Continuar?'
+        );
+        if (!ok) return;
+    }
+    const r = await agentsApi('/api/agents/mode', {paper: !goingLive});
+    if (r && r.success) refreshAgents();
+}
+
+async function runTournament(){
+    const r = await agentsApi('/api/agents/tournament/run', {});
+    if (r && r.event) {
+        alert('Tournament: ' + (r.event.event || '?') + ' — ' + (r.event.reason || JSON.stringify(r.event).slice(0,200)));
+    }
+    refreshAgents();
+}
+
+async function closeAgentsPosition(symbol){
+    if (!confirm('Cerrar posición de ' + symbol + ' a mercado?')) return;
+    const r = await agentsApi('/api/agents/position/close', {symbol});
+    if (r && r.success) console.log('closed', symbol);
+    refreshAgents();
+}
+
+async function refreshAgents(){
+    const s = await agentsApi('/api/agents/status');
+    if (!s || s.enabled === false){
+        document.getElementById('agents-section').style.display = 'none';
+        return;
+    }
+    const section = document.getElementById('agents-section');
+    section.style.display = 'block';
+
+    // Mode & running badges
+    document.getElementById('agents-mode-badge').textContent = s.mode || 'PAPER';
+    document.getElementById('agents-mode-badge').style.color = s.mode === 'LIVE' ? '#ff4757' : '#ffa502';
+    const runningBadge = document.getElementById('agents-running-badge');
+    runningBadge.textContent = s.running ? 'RUNNING' : 'STOPPED';
+    runningBadge.style.color = s.running ? '#00d4aa' : '#5a7184';
+    // Enable/disable Start & Stop based on running state (igual que el bot spot)
+    const btnStart = document.getElementById('agents-btn-start');
+    const btnStop  = document.getElementById('agents-btn-stop');
+    if (btnStart) btnStart.disabled = !!s.running;
+    if (btnStop)  btnStop.disabled  = !s.running;
+
+    // Paper toggle (active = LIVE)
+    const pt = document.getElementById('agents-paper-toggle');
+    if (s.mode === 'LIVE') pt.classList.add('active'); else pt.classList.remove('active');
+
+    // KPIs
+    const trader = s.trader || {};
+    const summary = trader.summary || {};
+    document.getElementById('agents-equity').textContent = '$' + (trader.equity || 0).toFixed(2);
+    const dailyPnl = trader.realized_pnl_today || 0;
+    const dailyEl = document.getElementById('agents-daily-pnl');
+    dailyEl.textContent = (dailyPnl>=0?'+':'') + '$' + dailyPnl.toFixed(2);
+    dailyEl.style.color = dailyPnl>=0 ? '#00d4aa' : '#ff4757';
+    document.getElementById('agents-total-trades').textContent = summary.total_trades || 0;
+    document.getElementById('agents-win-rate').textContent = (summary.win_rate || 0) + '%';
+    const totalPnl = summary.total_pnl || 0;
+    const totalEl = document.getElementById('agents-total-pnl');
+    totalEl.textContent = (totalPnl>=0?'+':'') + '$' + totalPnl.toFixed(2);
+    totalEl.style.color = totalPnl>=0 ? '#00d4aa' : '#ff4757';
+    const killActive = s.kill_switch && s.kill_switch.active;
+    const ksEl = document.getElementById('agents-kill-switch');
+    ksEl.textContent = killActive ? '🛑 ACTIVE' : 'OK';
+    ksEl.style.color = killActive ? '#ff4757' : '#00d4aa';
+
+    // Leaderboard
+    const lb = s.leaderboard || [];
+    const lbEl = document.getElementById('agents-leaderboard');
+    if (lb.length === 0){
+        lbEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Sin datos todavía — el tournament necesita ≥5 trades por agente</span>';
+    } else {
+        lbEl.innerHTML = lb.map((row,i) => {
+            const sharpe = row.sharpe || 0;
+            const sColor = sharpe >= 1 ? '#00d4aa' : (sharpe >= 0 ? '#ffa502' : '#ff4757');
+            const wColor = (row.win_rate || 0) >= 50 ? '#00d4aa' : '#ff4757';
+            const pnlColor = (row.total_pnl || 0) >= 0 ? '#00d4aa' : '#ff4757';
+            const crown = i === 0 ? '👑 ' : '';
+            return `
+                <div style="background:#0d1520;border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid ${sColor}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <span style="font-weight:700;font-size:14px">${crown}${row.agent}</span>
+                        <span style="font-size:11px;color:#5a7184">${row.trades} trades</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
+                        <div><span style="color:#5a7184">Sharpe</span><div style="font-weight:600;color:${sColor}">${sharpe.toFixed(2)}</div></div>
+                        <div><span style="color:#5a7184">Win Rate</span><div style="font-weight:600;color:${wColor}">${(row.win_rate||0).toFixed(0)}%</div></div>
+                        <div><span style="color:#5a7184">PnL total</span><div style="font-weight:600;color:${pnlColor}">$${(row.total_pnl||0).toFixed(2)}</div></div>
+                        <div><span style="color:#5a7184">Avg %</span><div style="font-weight:600">${(row.avg_pnl_pct||0).toFixed(2)}%</div></div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // Decisions per pair
+    const decs = s.decisions || {};
+    const decEl = document.getElementById('agents-decisions');
+    const symbols = Object.keys(decs);
+    if (symbols.length === 0){
+        decEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Esperando primer tick...</span>';
+    } else {
+        decEl.innerHTML = symbols.map(sym => {
+            const d = decs[sym];
+            const mom = d.momentum || {};
+            const rev = d.reversion || {};
+            const res = d.resolved || {};
+            const actColor = a => a==='LONG' ? '#00d4aa' : (a==='SHORT' ? '#ff4757' : '#5a7184');
+            return `
+                <div style="background:#0d1520;border-radius:8px;padding:12px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <span style="font-weight:700;font-size:14px">${sym}</span>
+                        <span style="font-size:11px;color:${actColor(res.action)};font-weight:700">${res.action || '—'} (${res.agent || '—'})</span>
+                    </div>
+                    <div style="font-size:11px;color:#7a8ea0;margin-bottom:4px">
+                        <span style="color:${actColor(mom.action)};font-weight:600">M:${mom.action||'—'}</span>
+                        <span style="color:#5a7184"> (${((mom.confidence||0)*100).toFixed(0)}%) — ${(mom.reasoning||'').slice(0,80)}</span>
+                    </div>
+                    <div style="font-size:11px;color:#7a8ea0;margin-bottom:4px">
+                        <span style="color:${actColor(rev.action)};font-weight:600">R:${rev.action||'—'}</span>
+                        <span style="color:#5a7184"> (${((rev.confidence||0)*100).toFixed(0)}%) — ${(rev.reasoning||'').slice(0,80)}</span>
+                    </div>
+                    <div style="font-size:10px;color:#5a7184;margin-top:6px;font-style:italic">→ ${res.reason || ''}</div>
+                </div>`;
+        }).join('');
+    }
+
+    // Open positions
+    const positions = trader.open_positions || [];
+    const posEl = document.getElementById('agents-positions');
+    if (positions.length === 0){
+        posEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Sin posiciones abiertas</span>';
+    } else {
+        posEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:8px">' +
+            positions.map(p => {
+                const sideColor = p.side === 'LONG' ? '#00d4aa' : '#ff4757';
+                return `
+                    <div style="background:#0d1520;border-radius:8px;padding:12px;border-left:3px solid ${sideColor}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                            <span style="font-weight:700">${p.symbol} <span style="color:${sideColor}">${p.side}</span></span>
+                            <button class="btn btn-stop btn-sm" onclick="closeAgentsPosition('${p.symbol}')" style="padding:2px 8px;font-size:10px">CLOSE</button>
+                        </div>
+                        <div style="font-size:11px;color:#7a8ea0;display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                            <div>Entry: <strong>$${(p.entry_price||0).toFixed(4)}</strong></div>
+                            <div>Qty: <strong>${(p.quantity||0)}</strong></div>
+                            <div>Notional: <strong>$${(p.notional||0).toFixed(2)}</strong></div>
+                            <div>Lev: <strong>${p.leverage}x</strong></div>
+                            <div>SL: <strong style="color:#ff4757">$${(p.sl_price||0).toFixed(4)}</strong></div>
+                            <div>TP: <strong style="color:#00d4aa">$${(p.tp_price||0).toFixed(4)}</strong></div>
+                            <div>Agent: <strong>${p.agent}</strong></div>
+                            <div>Funding: <strong>$${(p.funding_paid||0).toFixed(4)}</strong></div>
+                        </div>
+                    </div>`;
+            }).join('') + '</div>';
+    }
+
+    // History
+    const hist = trader.history || [];
+    const histEl = document.getElementById('agents-history');
+    if (hist.length === 0){
+        histEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Sin trades cerrados</span>';
+    } else {
+        histEl.innerHTML = hist.slice().reverse().map(t => {
+            const pnlColor = t.pnl_usdt >= 0 ? '#00d4aa' : '#ff4757';
+            const sideColor = t.side === 'LONG' ? '#00d4aa' : '#ff4757';
+            const time = (t.exit_time||'').slice(11,16);
+            return `
+                <div style="display:grid;grid-template-columns:60px 70px 80px 100px 100px 80px 1fr;gap:6px;padding:6px 0;border-bottom:1px solid #1e2d3d20;font-size:11px;align-items:center">
+                    <span style="color:#5a7184">${time}</span>
+                    <span style="font-weight:600">${t.symbol}</span>
+                    <span style="color:${sideColor};font-weight:600">${t.side}</span>
+                    <span>${t.agent||''}</span>
+                    <span style="color:${pnlColor};font-weight:700">${t.pnl_usdt>=0?'+':''}$${t.pnl_usdt.toFixed(3)}</span>
+                    <span style="color:${pnlColor}">${t.pnl_pct>=0?'+':''}${t.pnl_pct.toFixed(2)}%</span>
+                    <span style="color:#5a7184">${t.reason} · ${t.hold_minutes}min</span>
+                </div>`;
+        }).join('');
+    }
+
+    // Tournament events
+    const tournament = s.tournament || {};
+    const events = tournament.events || [];
+    const tournEl = document.getElementById('agents-tournament-events');
+    if (events.length === 0){
+        tournEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Sin eventos todavía</span>';
+    } else {
+        tournEl.innerHTML = events.slice().reverse().map(e => {
+            const time = (e.timestamp||'').slice(11,16);
+            let color = '#5a7184';
+            let icon = '·';
+            if (e.event === 'crossover') { color = '#ffa502'; icon = '🧬'; }
+            else if (e.event === 'defensive_mode') { color = '#ff4757'; icon = '🛡️'; }
+            else if (e.event === 'no_action') { color = '#5a7184'; icon = '○'; }
+            return `
+                <div style="padding:6px 8px;background:#0d1520;border-radius:6px;margin-bottom:4px;font-size:11px;border-left:2px solid ${color}">
+                    <span style="color:#5a7184">[${time}]</span> <span style="color:${color};font-weight:600">${icon} ${e.event}</span>
+                    ${e.winner ? `<span style="color:#7a8ea0"> — ${e.winner} won vs ${e.loser}</span>` : ''}
+                    ${e.reason ? `<div style="color:#5a7184;margin-top:2px">${e.reason}</div>` : ''}
+                </div>`;
+        }).join('');
+    }
+
+    // ── Safety phase banner ─────────────────────────────────────────────
+    const safety = s.safety_phase || {};
+    const safetyBanner = document.getElementById('agents-safety-banner');
+    if (safety.active) {
+        safetyBanner.style.display = 'block';
+        safetyBanner.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <strong style="color:#ffa502">🛡️ SAFETY PHASE ACTIVA</strong>
+                    <div style="font-size:11px;color:#7a8ea0;margin-top:4px">
+                        Leverage forzado a ${safety.max_leverage}x · ${safety.remaining_hours||0}h restantes de ${safety.hours_total}h
+                    </div>
+                </div>
+                <div style="font-size:24px;color:#ffa502">${safety.elapsed_hours||0}h / ${safety.hours_total}h</div>
+            </div>`;
+    } else if (safety.started_at) {
+        safetyBanner.style.display = 'block';
+        safetyBanner.style.borderColor = '#00d4aa60';
+        safetyBanner.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <strong style="color:#00d4aa">✅ Safety phase completada</strong>
+                    <div style="font-size:11px;color:#7a8ea0;margin-top:4px">
+                        Leverage ahora puede llegar hasta ${s.trader.mode === 'LIVE' ? 'el cap configurado' : 'paper sin restricción'}
+                    </div>
+                </div>
+            </div>`;
+    } else {
+        safetyBanner.style.display = 'none';
+    }
+
+    // ── Online ML por agente ─────────────────────────────────────────────
+    const mlData = s.online_ml || {};
+    const mlEl = document.getElementById('agents-online-ml');
+    const mlNames = Object.keys(mlData);
+    if (mlNames.length === 0) {
+        mlEl.innerHTML = '<span style="color:#5a7184;font-size:12px">OnlineML deshabilitado</span>';
+    } else {
+        mlEl.innerHTML = mlNames.map(name => {
+            const ml = mlData[name];
+            const accColor = ml.accuracy >= 0.55 ? '#00d4aa' : (ml.accuracy >= 0.45 ? '#ffa502' : '#ff4757');
+            const topF = (ml.top_features || []).map(f => `<span style="color:#7a8ea0">${f.feature}=${f.weight}</span>`).join(' · ');
+            return `
+                <div style="background:#0d1520;border-radius:8px;padding:12px;border-left:3px solid ${accColor}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                        <strong>${name}</strong>
+                        <span style="font-size:11px;color:#5a7184">${ml.samples} samples</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;margin-bottom:6px">
+                        <div><span style="color:#5a7184">Accuracy</span><div style="color:${accColor};font-weight:700;font-size:14px">${(ml.accuracy*100).toFixed(1)}%</div></div>
+                        <div><span style="color:#5a7184">Bias</span><div style="font-weight:600">${ml.bias}</div></div>
+                    </div>
+                    <div style="font-size:10px;color:#5a7184">Top features: ${topF || '—'}</div>
+                </div>`;
+        }).join('');
+    }
+
+    // ── Bandit variants ──────────────────────────────────────────────────
+    const banditData = s.bandit || {};
+    const banditEl = document.getElementById('agents-bandit');
+    const banditAgents = Object.keys(banditData);
+    if (banditAgents.length === 0) {
+        banditEl.innerHTML = '<span style="color:#5a7184;font-size:12px">Bandit deshabilitado o sin variantes</span>';
+    } else {
+        banditEl.innerHTML = banditAgents.map(name => {
+            const variants = banditData[name] || [];
+            const rows = variants.map(v => {
+                const sColor = v.sharpe >= 1 ? '#00d4aa' : (v.sharpe >= 0 ? '#ffa502' : '#ff4757');
+                return `
+                    <div style="display:grid;grid-template-columns:120px 60px 60px 80px 80px 1fr;gap:6px;padding:6px 0;border-bottom:1px solid #1e2d3d20;font-size:11px;align-items:center">
+                        <span style="font-weight:600">${v.name}</span>
+                        <span style="color:#5a7184">${v.trades} tr</span>
+                        <span style="color:${(v.win_rate>=50)?'#00d4aa':'#ff4757'}">${v.win_rate.toFixed(0)}%</span>
+                        <span style="color:${sColor};font-weight:600">${v.sharpe.toFixed(2)}</span>
+                        <span>${v.avg_pnl_pct.toFixed(2)}%</span>
+                        <span style="color:#5a7184">${v.age_minutes}min vivo</span>
+                    </div>`;
+            }).join('');
+            return `
+                <div style="margin-bottom:10px">
+                    <div style="font-size:12px;color:#7a8ea0;margin-bottom:4px"><strong>${name}</strong> — pool de variantes paper:</div>
+                    <div style="background:#0d1520;border-radius:6px;padding:8px">
+                        <div style="display:grid;grid-template-columns:120px 60px 60px 80px 80px 1fr;gap:6px;font-size:10px;color:#5a7184;font-weight:700;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid #1e2d3d">
+                            <span>Variant</span><span>Trades</span><span>WR</span><span>Sharpe</span><span>Avg %</span><span>Edad</span>
+                        </div>
+                        ${rows || '<div style="color:#5a7184;font-size:11px;padding:6px 0">Sin trades sintéticos aún</div>'}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ── Reflection (Claude) ──────────────────────────────────────────────
+    const refl = s.reflection || {};
+    document.getElementById('reflection-calls').textContent = refl.calls || 0;
+    document.getElementById('reflection-applied').textContent = refl.applied || 0;
+    const recent = refl.recent || [];
+    const reflEl = document.getElementById('agents-reflections');
+    if (recent.length === 0) {
+        reflEl.innerHTML = '<span style="color:#5a7184;font-size:12px">' + (refl.enabled === false ? 'Sin ANTHROPIC_API_KEY' : 'Sin reflexiones todavía (Claude reflexiona tras cada cierre)') + '</span>';
+    } else {
+        reflEl.innerHTML = recent.slice().reverse().map(r => {
+            const dirColor = r.direction === 'up' ? '#00d4aa' : (r.direction === 'down' ? '#ff4757' : '#5a7184');
+            const dirArrow = r.direction === 'up' ? '↑' : (r.direction === 'down' ? '↓' : '—');
+            const time = (r.timestamp||'').slice(11,16);
+            return `
+                <div style="padding:6px 8px;background:#0d1520;border-radius:6px;margin-bottom:4px;font-size:11px;border-left:2px solid ${dirColor}">
+                    <span style="color:#5a7184">[${time}]</span>
+                    <strong>${r.agent}</strong>
+                    <span style="color:${dirColor};font-weight:700">${dirArrow} ${r.param}</span>
+                    <span style="color:#5a7184">(Δ ${r.delta||0})</span>
+                    <div style="color:#7a8ea0;margin-top:2px">${r.reasoning}</div>
+                </div>`;
+        }).join('');
+    }
+
+    // ── Cross-contagion ──────────────────────────────────────────────────
+    const contagion = s.contagion || {};
+    document.getElementById('contagion-active').textContent = contagion.active_events || 0;
+    document.getElementById('contagion-pubs').textContent = contagion.publish_count || 0;
+    document.getElementById('contagion-queries').textContent = contagion.query_count || 0;
+    document.getElementById('contagion-boosts').textContent = contagion.boost_count || 0;
+    const contagionEvents = contagion.recent_events || [];
+    const conEl = document.getElementById('agents-contagion-events');
+    if (contagionEvents.length === 0) {
+        conEl.innerHTML = '<span style="color:#5a7184;font-size:12px">' + (contagion.enabled === false ? 'Contagion deshabilitado' : 'Sin eventos publicados aún') + '</span>';
+    } else {
+        conEl.innerHTML = contagionEvents.slice().reverse().map(e => {
+            const c = e.profitable ? '#00d4aa' : '#ff4757';
+            return `
+                <div style="padding:5px 8px;background:#0d1520;border-radius:6px;margin-bottom:3px;font-size:11px;border-left:2px solid ${c}">
+                    <strong>${e.agent}</strong> · ${e.symbol} · <span style="color:${c};font-weight:700">${e.pnl_pct>=0?'+':''}${e.pnl_pct}%</span>
+                    <span style="color:#5a7184"> (hace ${Math.round(e.age_sec/60)}min)</span>
+                </div>`;
+        }).join('');
+    }
+
+    // Agents log
+    const logs = s.logs || [];
+    document.getElementById('agents-log').innerHTML = logs.slice().reverse().map(l => {
+        const cls = l.level === 'ERROR' ? 'log-error' : (l.level === 'WARN' ? 'log-warn' : 'log-info');
+        return `<div><span class="log-time">[${l.time}]</span> <span class="${cls}">${l.message}</span></div>`;
+    }).join('');
+}
+
+// Polling — el módulo agents se refresca cada 5s independiente del bot spot
+setInterval(refreshAgents, 5000);
+refreshAgents();
+
 </script>
 </body>
 </html>

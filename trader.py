@@ -666,6 +666,20 @@ class BinanceTrader:
             self.trade_history.append(record)
             self._save_state()
 
+            # ─── ML feedback para PARTIAL_TP ─────────────────────────────────
+            # place_partial_sell no llamaba a save_ml_feedback, privando al modelo
+            # de aprender de sus mejores salidas (las únicas realmente rentables).
+            persistence.save_ml_feedback({
+                "symbol":      symbol,
+                "entry_price": position.entry_price,
+                "exit_price":  fill_price,
+                "entry_time":  position.entry_time,
+                "exit_time":   record.timestamp,
+                "pnl_pct":     round(pnl_net_pct, 4),
+                "profitable":  pnl_net > 0,
+                "reason":      "PARTIAL_TP",
+            })
+
             logger.info(
                 f"PARTIAL_TP {symbol}: sold {fraction*100:.0f}% ({partial_qty}) "
                 f"@ ${fill_price:.4f} | pnl: ${pnl_net:+.4f} ({pnl_net_pct:+.2f}%) "

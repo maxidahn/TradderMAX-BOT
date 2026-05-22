@@ -1,0 +1,36 @@
+{
+  "MomentumHunter": {
+    "min_confidence": 0.7,
+    "sl_pct": 1.2,
+    "tp_pct": 2.678533040721464,
+    "max_hold_minutes": 176,
+    "trailing_after_pct": 1.0120293352887424,
+    "trailing_distance_pct": 0.6023406979249992,
+    "ema_fast": 10,
+    "ema_slow": 23,
+    "adx_min": 23.349860067064345,
+    "volume_min_ratio": 1.1481655416480272,
+    "rsi_extreme_low": 27.550284022326977,
+    "rsi_extreme_high": 77.08736765793908,
+    "bb_period": 21,
+    "bb_std": 1.7056779893540828,
+    "funding_extreme": 0.020591470279152094
+  },
+  "ReversalSniper": {
+    "min_confidence": 0.7,
+    "sl_pct": 1.2,
+    "tp_pct": 2.4,
+    "max_hold_minutes": 120,
+    "trailing_after_pct": 0.8,
+    "trailing_distance_pct": 0.5,
+    "ema_fast": 9,
+    "ema_slow": 21,
+    "adx_min": 22.0,
+    "volume_min_ratio": 1.1,
+    "rsi_extreme_low": 30.0,
+    "rsi_extreme_high": 70.0,
+    "bb_period": 20,
+    "bb_std": 2.0,
+    "funding_extreme": 0.015
+  }
+}

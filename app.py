@@ -35,6 +35,21 @@ logging.basicConfig(
 app = Flask(__name__)
 bot = CelerityBot(config)
 
+# ─── Multi-Agent Futures Orchestrator (optional module) ───
+# Solo se inicializa si futures.enabled = True. No afecta al spot bot.
+agents_orchestrator = None
+if config.futures.enabled:
+    try:
+        from agents import AgentsOrchestrator
+        agents_orchestrator = AgentsOrchestrator(config, telegram=bot.telegram)
+        logging.getLogger("celerity").info(
+            f"AgentsOrchestrator initialized (paper={config.futures.paper_trade}, "
+            f"pairs={[p.symbol for p in config.futures.pairs if p.enabled]})"
+        )
+    except Exception as e:
+        logging.getLogger("celerity").error(f"AgentsOrchestrator init failed: {e}")
+        agents_orchestrator = None
+
 
 @app.route("/")
 def dashboard():
@@ -351,6 +366,130 @@ def api_config():
     })
 
 
+# ─── Multi-Agent Futures endpoints (optional module) ───
+
+@app.route("/api/agents/status")
+def api_agents_status():
+    """Status completo del módulo multi-agente."""
+    if not agents_orchestrator:
+        return jsonify({"enabled": False, "reason": "agents module disabled or failed to init"}), 200
+    return jsonify(agents_orchestrator.get_status())
+
+@app.route("/api/agents/start", methods=["POST"])
+def api_agents_start():
+    if not agents_orchestrator:
+        return jsonify({"success": False, "error": "agents module not available"}), 400
+    ok = agents_orchestrator.start()
+    return jsonify({"success": ok, "running": agents_orchestrator.running})
+
+@app.route("/api/agents/stop", methods=["POST"])
+def api_agents_stop():
+    if not agents_orchestrator:
+        return jsonify({"success": False}), 400
+    agents_orchestrator.stop()
+    return jsonify({"success": True})
+
+@app.route("/api/agents/mode", methods=["POST"])
+def api_agents_mode():
+    """Toggle paper ↔ live. Cuidado: live ejecuta órdenes reales."""
+    if not agents_orchestrator:
+        return jsonify({"success": False}), 400
+    data = request.json or {}
+    paper = bool(data.get("paper", True))
+    agents_orchestrator.toggle_paper_mode(paper)
+    return jsonify({"success": True, "paper_trade": paper})
+
+@app.route("/api/agents/leaderboard")
+def api_agents_leaderboard():
+    if not agents_orchestrator:
+        return jsonify({"leaderboard": []})
+    return jsonify({"leaderboard": agents_orchestrator.tournament.get_leaderboard()})
+
+@app.route("/api/agents/tournament/run", methods=["POST"])
+def api_tournament_run():
+    """Fuerza una corrida del tournament (uso manual / debug)."""
+    if not agents_orchestrator:
+        return jsonify({"success": False}), 400
+    event = agents_orchestrator.tournament.run()
+    return jsonify({"success": True, "event": event})
+
+@app.route("/api/agents/position/close", methods=["POST"])
+def api_agents_close_position():
+    """Cierre manual de una posición de futuros."""
+    if not agents_orchestrator:
+        return jsonify({"success": False}), 400
+    data = request.json or {}
+    symbol = data.get("symbol")
+    if not symbol:
+        return jsonify({"success": False, "error": "symbol required"}), 400
+    rec = agents_orchestrator.futures_trader.close_position(symbol, reason="MANUAL")
+    if rec:
+        agents_orchestrator._on_position_closed(rec)
+        return jsonify({"success": True, "pnl": rec.pnl_usdt, "pnl_pct": rec.pnl_pct})
+    return jsonify({"success": False, "error": "close failed"}), 400
+
+@app.route("/api/agents/replay")
+def api_agents_replay():
+    """Últimas N entradas del replay buffer (decisiones + outcomes)."""
+    if not agents_orchestrator:
+        return jsonify({"entries": []})
+    n = int(request.args.get("n", 50))
+    n = max(1, min(n, 500))
+    return jsonify({"entries": agents_orchestrator.replay.recent_closed_all(limit=n)})
+
+
+# ─── Aprendizaje acelerado: endpoints específicos ───
+
+@app.route("/api/agents/online_ml")
+def api_agents_online_ml():
+    """Estado de los OnlineLearners por agente (pesos, accuracy, top features)."""
+    if not agents_orchestrator or not agents_orchestrator.online_learners:
+        return jsonify({"enabled": False, "learners": {}})
+    return jsonify({
+        "enabled":  True,
+        "learners": {name: lr.get_state() for name, lr in agents_orchestrator.online_learners.items()},
+    })
+
+@app.route("/api/agents/reflection")
+def api_agents_reflection():
+    """Últimas reflexiones de Claude post-trade + cambios aplicados."""
+    if not agents_orchestrator or not agents_orchestrator.reflector:
+        return jsonify({"enabled": False})
+    return jsonify(agents_orchestrator.reflector.get_status())
+
+@app.route("/api/agents/contagion")
+def api_agents_contagion():
+    """Estado del bus de cross-contagion entre agentes."""
+    if not agents_orchestrator or not agents_orchestrator.contagion:
+        return jsonify({"enabled": False})
+    return jsonify(agents_orchestrator.contagion.get_status())
+
+@app.route("/api/agents/bandit")
+def api_agents_bandit():
+    """Variantes paper actuales por agente + stats."""
+    if not agents_orchestrator or not agents_orchestrator.bandit:
+        return jsonify({"enabled": False, "variants": {}})
+    return jsonify({"enabled": True, "variants": agents_orchestrator.bandit.get_status()})
+
+@app.route("/api/agents/safety_phase")
+def api_agents_safety_phase():
+    """Estado de la safety phase (leverage 1x durante primeras 72h live)."""
+    if not agents_orchestrator:
+        return jsonify({"enabled": False})
+    safety = {
+        "active":        agents_orchestrator.safety_phase_active(),
+        "started_at":    agents_orchestrator._live_started_at,
+        "hours_total":   agents_orchestrator.fc.safety_phase_hours,
+        "max_leverage":  agents_orchestrator.fc.safety_phase_max_leverage,
+    }
+    if agents_orchestrator._live_started_at:
+        import time
+        elapsed_h = (time.time() - agents_orchestrator._live_started_at) / 3600.0
+        safety["elapsed_hours"] = round(elapsed_h, 1)
+        safety["remaining_hours"] = round(max(0, agents_orchestrator.fc.safety_phase_hours - elapsed_h), 1)
+    return jsonify(safety)
+
+
 @app.route("/health")
 def health():
     """Railway health check endpoint."""
@@ -396,6 +535,20 @@ if __name__ == "__main__":
         print("    export BINANCE_API_KEY='your_api_key_here'")
         print("    export BINANCE_API_SECRET='your_api_secret_here'")
         print("  For testnet: export BINANCE_TESTNET=true")
+
+    # ─── Auto-start multi-agent module (paper-trade by default) ───
+    if agents_orchestrator and config.futures.enabled:
+        print()
+        mode = "PAPER" if config.futures.paper_trade else "*** LIVE FUTURES ***"
+        pairs = ", ".join(p.symbol for p in config.futures.pairs if p.enabled)
+        print(f"  Agents Module: {mode}")
+        print(f"  Pairs (futures): {pairs}")
+        print(f"  Max leverage cap: {config.futures.max_leverage}x")
+        print(f"  Starting AgentsOrchestrator...")
+        if agents_orchestrator.start():
+            print(f"  AgentsOrchestrator running. View at http://localhost:{config.web_port}/#agents")
+        else:
+            print(f"  WARNING: AgentsOrchestrator did NOT start. Check logs.")
     print()
 
     # Railway injects PORT; fall back to config value locally

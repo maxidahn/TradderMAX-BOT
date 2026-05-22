@@ -1,0 +1,46 @@
+{
+  "SOLUSDT": {
+    "symbol": "SOLUSDT",
+    "side": "SHORT",
+    "entry_price": 86.59,
+    "quantity": 0.19,
+    "notional": 16.4521,
+    "leverage": 1,
+    "entry_time": "2026-05-22T14:20:09.313565+00:00",
+    "agent": "MomentumHunter",
+    "sl_price": 87.62908,
+    "tp_price": 84.27065824003928,
+    "peak_price": 86.33,
+    "funding_paid": -5.8096478125e-06,
+    "order_id": "PAPER-1779459609313",
+    "paper": true,
+    "metadata": {
+      "confidence": 0.64,
+      "reason": "[adjudicator] ADX 39 \u2265 23.349860067064345 + EMA9<EMA21 (-0.18%) + vol 1.7x + RSI 30\u2193 [ml+0.23] | adj: Strong ADX 39 + RSI 30 oversold + EMA bearish alignment outweighs weak BB reversal signal.",
+      "features_sample": {
+        "price": 86.65,
+        "ema9": 87.06274122327767,
+        "ema21": 87.21944628488062,
+        "ema50": 87.22371607086382,
+        "ema_spread_pct": -0.17966757217319515,
+        "rsi": 30.06732843572904,
+        "rsi_momentum": -9.955320538815535,
+        "atr": 0.25785714285714284,
+        "atr_pct": 0.29758470035446377,
+        "adx": 39.229856265863226,
+        "plus_di": 5.817174515235284,
+        "minus_di": 38.22714681440431,
+        "trend_dir": "down",
+        "bb_upper": 87.96608859435256,
+        "bb_lower": 86.75691140564746,
+        "bb_position": -1.1768333154910702,
+        "volume_ratio": 1.6763423620229156,
+        "ret_1m": -0.0032209823996318665,
+        "ret_5m": -0.007104388678812801,
+        "ret_15m": -0.011070531842045206,
+        "funding_rate": 0.0009209999999999999,
+        "ls_ratio": 1.0
+      }
+    }
+  }
+}
