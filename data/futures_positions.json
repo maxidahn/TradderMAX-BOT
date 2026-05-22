@@ -10,8 +10,8 @@
     "agent": "MomentumHunter",
     "sl_price": 87.62908,
     "tp_price": 84.27065824003928,
-    "peak_price": 86.33,
-    "funding_paid": -5.8096478125e-06,
+    "peak_price": 86.22,
+    "funding_paid": 1.151647e-06,
     "order_id": "PAPER-1779459609313",
     "paper": true,
     "metadata": {

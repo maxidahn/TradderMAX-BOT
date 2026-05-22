@@ -1,7 +1,12 @@
 {
   "BTCUSDC": true,
-  "PAXGUSDT": true,
   "ETHUSDC": true,
   "SOLUSDC": true,
-  "BNBUSDC": true
+  "LINKUSDC": true,
+  "AVAXUSDC": true,
+  "BNBUSDC": true,
+  "XRPUSDC": true,
+  "ADAUSDC": true,
+  "DOTUSDC": true,
+  "PAXGUSDT": true
 }
