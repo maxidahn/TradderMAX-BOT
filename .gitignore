@@ -10,3 +10,10 @@ build/
 package-lock.json
 node_modules/
 venv/
+
+# Operational data — high-churn, no value in version control
+data/replay_buffer.jsonl
+data/futures_trades.json
+data/trade_history.json
+data/ml_feedback.json
+data/online_ml_*.NUCLEAR_BACKUP_*.json
