@@ -22,7 +22,7 @@ import pytz
 
 import persistence
 from config import AppConfig
-from strategy import Strategy, Signal
+from strategy import Strategy, Signal, calculate_atr
 from trader import BinanceTrader
 from tv_webhook import TradingViewReceiver
 from telegram_notifier import TelegramNotifier
@@ -71,6 +71,21 @@ class CelerityBot:
         # Si el intento fue hace menos de BUY_COOLDOWN_SEC, se bloquea el nuevo intento.
         self._buy_last_attempt: Dict[str, float] = {}
         self.BUY_COOLDOWN_SEC = 5 * 60  # 5 minutos de cooldown entre intentos de BUY
+
+        # ─── Cooldown POST-STOP-LOSS: tras saltar un SL en un par, no reentrar
+        # durante POST_SL_COOLDOWN_SEC. Diagnóstico jun-2026: 21 stop-losses
+        # concentraban -$20.50 (≈ toda la pérdida neta). Reentrar de inmediato en
+        # el mismo par que acaba de revertir es el principal sangrado. Por defecto
+        # 2h: deja pasar el régimen adverso antes de volver a intentar.
+        self._sl_cooldown_until: Dict[str, float] = {}
+        self.POST_SL_COOLDOWN_SEC = 2 * 60 * 60  # 2 horas tras un stop-loss
+
+        # ─── Filtro de MAREA (Elder, Pantalla 1) — auditoría 2026-06-09 P1 ───
+        # Tendencia del propio par en 4h y 1h. Solo se permiten compras cuando
+        # la marea del timeframe superior es alcista. Cache de 15 min por par
+        # (las velas de 4h cambian lento; evita spamear la API).
+        self._tide_cache: Dict[str, dict] = {}
+        self.TIDE_CACHE_SEC = 15 * 60
 
         # ─── Telegram ───
         self.telegram = TelegramNotifier()
@@ -164,7 +179,9 @@ class CelerityBot:
 
         if trade["action"] == "BUY":
             self._log("INFO", f"Placing BUY order for {symbol} (${trade['amount']:.2f})...")
-            position = self.trader.place_buy(symbol, trade["amount"])
+            position = self.trader.place_buy(symbol, trade["amount"],
+                                             sl_pct=trade.get("sl_pct", 0.0),
+                                             tp_pct=trade.get("tp_pct", 0.0))
             if position:
                 self._log("INFO", f"✅ COMPRADO: {symbol} @ ${position.entry_price:.2f} | Qty: {position.quantity}")
                 self.telegram.buy_executed(
@@ -298,8 +315,11 @@ class CelerityBot:
                     persistence.save_open_positions(self.trader.positions)
 
                 # ── 1. Standard SL/TP check (with Partial TP support) ─────────
+                # Stops por ATR de la posición si existen; si no, los del risk_level
+                pos_sl = pos.sl_pct if getattr(pos, "sl_pct", 0.0) > 0 else sl_pct
+                pos_tp = pos.tp_pct if getattr(pos, "tp_pct", 0.0) > 0 else tp_pct
                 sl_tp = self.strategy.check_stop_loss_take_profit(
-                    pos.entry_price, current_price, pos.side, sl_pct, tp_pct,
+                    pos.entry_price, current_price, pos.side, pos_sl, pos_tp,
                     partial_tp_taken=pos.partial_tp_taken,
                 )
                 if sl_tp == "PARTIAL_TP":
@@ -321,6 +341,8 @@ class CelerityBot:
                             f"PnL: ${record.pnl:.4f} ({record.pnl_pct:+.2f}%)")
                         if "STOP" in sl_tp:
                             self.telegram.stop_loss(symbol, record.price, record.pnl, record.pnl_pct)
+                            # Activar cooldown post-SL: no reentrar este par por un rato
+                            self._sl_cooldown_until[symbol] = time.time() + self.POST_SL_COOLDOWN_SEC
                         else:
                             self.telegram.take_profit(symbol, record.price, record.pnl, record.pnl_pct)
                     continue  # Position closed — skip trailing/timeout for this symbol
@@ -402,6 +424,54 @@ class CelerityBot:
             except Exception as e:
                 # ── BUG 1 FIX: was logger.debug — invisible at INFO level ─────
                 logger.warning(f"Fast SL/TP check error for {symbol}: {e}")
+
+    def _tide_ok(self, symbol: str) -> tuple:
+        """
+        Filtro de MAREA (Elder, Triple Pantalla — Pantalla 1).
+
+        Calcula la tendencia del par en 4h (marea) y 1h (ola):
+          - Marea alcista:  EMA20(4h) > EMA50(4h)
+          - Ola no bajista: EMA20(1h) ≥ EMA50(1h)
+
+        Solo se permiten COMPRAS cuando ambas se cumplen. Esta única regla
+        reemplaza conceptualmente a los parches de correlación BTC: el propio
+        par debe estar en tendencia alcista en el timeframe superior.
+
+        Devuelve (ok: bool, detail: str). Fail-open ante errores de API para
+        no romper el loop (igual que los demás gates).
+        """
+        now_ts = time.time()
+        cached = self._tide_cache.get(symbol)
+        if cached and now_ts - cached["time"] < self.TIDE_CACHE_SEC:
+            return cached["ok"], cached["detail"]
+
+        ok, detail = True, "marea: sin datos (fail-open)"
+        try:
+            df4 = self.trader.get_candles(symbol, interval="4h", limit=80)
+            df1 = self.trader.get_candles(symbol, interval="1h", limit=120)
+            if df4 is not None and len(df4) >= 55 and df1 is not None and len(df1) >= 55:
+                # Descartar la vela en formación (igual que strategy.analyze)
+                c4 = df4["close"].astype(float).iloc[:-1]
+                c1 = df1["close"].astype(float).iloc[:-1]
+
+                ema20_4h = c4.ewm(span=20, adjust=False).mean().iloc[-1]
+                ema50_4h = c4.ewm(span=50, adjust=False).mean().iloc[-1]
+                ema20_1h = c1.ewm(span=20, adjust=False).mean().iloc[-1]
+                ema50_1h = c1.ewm(span=50, adjust=False).mean().iloc[-1]
+
+                tide_bull = ema20_4h > ema50_4h
+                wave_ok   = ema20_1h >= ema50_1h
+
+                spread4 = (ema20_4h - ema50_4h) / ema50_4h * 100
+                spread1 = (ema20_1h - ema50_1h) / ema50_1h * 100
+                detail = (f"marea 4h {'↑' if tide_bull else '↓'} ({spread4:+.2f}%) | "
+                          f"ola 1h {'↑' if wave_ok else '↓'} ({spread1:+.2f}%)")
+                ok = tide_bull and wave_ok
+        except Exception as e:
+            logger.debug(f"_tide_ok {symbol} failed (fail-open): {e}")
+
+        self._tide_cache[symbol] = {"time": now_ts, "ok": ok, "detail": detail}
+        return ok, detail
 
     def _process_pair(self, pair):
         try:
@@ -506,10 +576,14 @@ class CelerityBot:
             # Check SL/TP for open positions
             if pair.symbol in self.trader.positions:
                 pos = self.trader.positions[pair.symbol]
-                # Use risk_level SL/TP (source of truth shown on dashboard)
+                # Stops por ATR de la posición si existen; fallback al risk_level
                 risk_params_sl = self.config.get_risk_params()
                 sl_pct = risk_params_sl.get("stop_loss_pct",   adapted.stop_loss_pct)
                 tp_pct = risk_params_sl.get("take_profit_pct", adapted.take_profit_pct)
+                if getattr(pos, "sl_pct", 0.0) > 0:
+                    sl_pct = pos.sl_pct
+                if getattr(pos, "tp_pct", 0.0) > 0:
+                    tp_pct = pos.tp_pct
                 sl_tp = self.strategy.check_stop_loss_take_profit(
                     pos.entry_price, result.price, pos.side,
                     sl_pct, tp_pct,
@@ -532,6 +606,7 @@ class CelerityBot:
                             f"{pair.symbol}: Closed @ ${record.price:.2f} | PnL: ${record.pnl:.4f} ({record.pnl_pct:+.2f}%)")
                         if "STOP" in sl_tp:
                             self.telegram.stop_loss(pair.symbol, record.price, record.pnl, record.pnl_pct)
+                            self._sl_cooldown_until[pair.symbol] = time.time() + self.POST_SL_COOLDOWN_SEC
                         else:
                             self.telegram.take_profit(pair.symbol, record.price, record.pnl, record.pnl_pct)
                     return
@@ -543,6 +618,29 @@ class CelerityBot:
 
             if result.signal == Signal.BUY and pair.symbol not in self.trader.positions:
                 risk_params = self.config.get_risk_params()
+
+                # ══ FILTRO DE MAREA (Elder, Pantalla 1) — auditoría P1 ════════
+                # La tendencia 4h/1h del PROPIO par debe ser alcista para comprar.
+                # Habría evitado la mayoría de los 26 stop-outs (-$23.80): eran
+                # longs abiertos con la marea en contra.
+                tide_ok, tide_detail = self._tide_ok(pair.symbol)
+                if not tide_ok:
+                    self._log("INFO",
+                        f"{pair.symbol}: BUY bloqueado — MAREA EN CONTRA ({tide_detail})")
+                    return
+
+                # ══ FILTRO DE EVENTO MACRO (noticias de alto impacto) ═════════
+                # FOMC / CPI / decisiones de tasas etc. en las últimas 2h →
+                # no abrir posiciones nuevas hasta que pase la volatilidad del evento.
+                try:
+                    macro = self.strategy.sentiment.macro_event_active()
+                    if macro:
+                        self._log("INFO",
+                            f"{pair.symbol}: BUY bloqueado — EVENTO MACRO reciente: "
+                            f"{macro.get('headline', '')[:80]}")
+                        return
+                except Exception:
+                    pass
 
                 # ══ FILTRO HORARIO: bloquear horas con win rate histórico 0% ═══
                 # Análisis de 65 trades reales identificó 4 ventanas donde el bot
@@ -578,6 +676,30 @@ class CelerityBot:
                 except Exception:
                     pass
 
+                # ══ REGLA DEL 6% MENSUAL (Elder) — auditoría P2 ═══════════════
+                # Si las pérdidas acumuladas del mes alcanzan el 6% del capital
+                # (balance disponible + capital en posiciones), no se abren
+                # posiciones nuevas hasta el mes siguiente. Protege contra la
+                # "mordedura de pirañas": muchas pérdidas chicas que suman.
+                MONTHLY_LOSS_PCT = 6.0
+                try:
+                    monthly = self.trader.get_monthly_stats()
+                    quote_asset_mb = self.trader._get_quote_asset(pair.symbol)
+                    capital_base = (
+                        self.trader.get_balance(quote_asset_mb)
+                        + sum(p.usdt_amount for p in self.trader.positions.values())
+                    )
+                    monthly_limit = -(MONTHLY_LOSS_PCT / 100.0) * capital_base
+                    if capital_base > 0 and monthly["pnl"] <= monthly_limit:
+                        self._log("WARN",
+                            f"{pair.symbol}: BUY bloqueado — REGLA 6% MENSUAL (Elder): "
+                            f"PnL {monthly['month']} ${monthly['pnl']:.2f} ≤ límite "
+                            f"${monthly_limit:.2f} (capital ${capital_base:.0f}). "
+                            f"Sin entradas nuevas hasta el mes próximo.")
+                        return
+                except Exception:
+                    pass
+
                 # ══ MARKET BREADTH: mercado mayoritariamente bajista ══════════
                 # Si ≥ 55% de los pares monitoreados tienen score negativo → no entrar.
                 # Una señal alcista aislada en un mercado bajista suele fallar.
@@ -602,6 +724,14 @@ class CelerityBot:
                     remaining = int(self.BUY_COOLDOWN_SEC - elapsed)
                     self._log("INFO",
                         f"{pair.symbol}: BUY bloqueado — cooldown activo ({remaining}s restantes desde último intento)")
+                    return
+
+                # ── Cooldown POST-STOP-LOSS: no reentrar un par que acaba de saltar SL
+                sl_cd_until = self._sl_cooldown_until.get(pair.symbol, 0.0)
+                if now_ts < sl_cd_until:
+                    mins_left = int((sl_cd_until - now_ts) / 60)
+                    self._log("INFO",
+                        f"{pair.symbol}: BUY bloqueado — cooldown post-stop-loss ({mins_left} min restantes)")
                     return
 
                 # ── Límite de posiciones simultáneas ─────────────────────────
@@ -639,7 +769,7 @@ class CelerityBot:
 
                 # ── Filtro de volumen mínimo ──────────────────────────────────
                 # volume_ratio ya usa velas completadas (completed_vol_ratio)
-                VOL_MIN = 0.30
+                VOL_MIN = 0.25   # -0.05 optimizer 2026-05-24 (volume_min bloqueó 8 señales > umbral 5)
                 if result.volume_ratio < VOL_MIN:
                     self._log("INFO",
                         f"{pair.symbol}: BUY bloqueado — volumen {result.volume_ratio:.2f}x < {VOL_MIN}x (sin liquidez)")
@@ -715,12 +845,33 @@ class CelerityBot:
                     f"{pair.symbol}: Sizing dinámico — balance:{available:.1f} "
                     f"× {position_pct:.1%} × régimen:{regime_adj:.2f}x = ${amount:.2f}")
 
+                # ══ STOPS POR ATR (auditoría P1) ══════════════════════════════
+                # SL = 1.8× ATR(14)% del par a la entrada (clamp 1.0%-3.5%),
+                # TP = 2× SL (R/R 1:2 sobre volatilidad REAL, no sobre un slider).
+                # Antes: SL fijo del risk_level (1.1-2.2%) quedaba DENTRO del
+                # ruido (ATR ~1%) → 26 stop-outs. La capa reflection ya lo había
+                # detectado ("SL 1.1% con volatilidad 0.97% es muy chico").
+                sl_pct_atr, tp_pct_atr = 0.0, 0.0
+                try:
+                    atr_series = calculate_atr(df.iloc[:-1], 14)
+                    atr_val = float(atr_series.iloc[-1])
+                    if result.price > 0 and atr_val == atr_val:  # not NaN
+                        atr_pct = atr_val / result.price * 100
+                        sl_pct_atr = round(min(3.5, max(1.0, 1.8 * atr_pct)), 2)
+                        tp_pct_atr = round(sl_pct_atr * 2.0, 2)
+                        self._log("INFO",
+                            f"{pair.symbol}: Stops por ATR — ATR {atr_pct:.2f}% → "
+                            f"SL {sl_pct_atr}% / TP {tp_pct_atr}%")
+                except Exception as atr_err:
+                    logger.debug(f"ATR stop calc failed for {pair.symbol}: {atr_err}")
+
                 if self.autonomous:
                     # Registrar timestamp ANTES del intento para que el cooldown aplique
                     # incluso si la orden falla (evita martillar el mismo par en pérdida)
                     self._buy_last_attempt[pair.symbol] = time.time()
                     self._log("INFO", f"{pair.symbol}: AUTO BUY (AI score: {result.ai_score:+.3f})")
-                    position = self.trader.place_buy(pair.symbol, amount)
+                    position = self.trader.place_buy(pair.symbol, amount,
+                                                     sl_pct=sl_pct_atr, tp_pct=tp_pct_atr)
                     if position:
                         self._log("INFO", f"{pair.symbol}: Bought @ ${position.entry_price:.2f} (${amount:.1f})")
                         self.telegram.buy_executed(
@@ -736,6 +887,8 @@ class CelerityBot:
                             "action": "BUY",
                             "symbol": pair.symbol,
                             "amount": round(amount, 2),
+                            "sl_pct": sl_pct_atr,
+                            "tp_pct": tp_pct_atr,
                             "price": result.price,
                             "ai_score": result.ai_score,
                             "confidence": result.confidence,

@@ -26,9 +26,12 @@ from typing import Dict, Optional
 
 logger = logging.getLogger("celerity.claude")
 
-# Only activate Claude when base score is close to the execution threshold
-# (0.55 means the signal is already strong — Claude adds final confirmation)
-ACTIVATION_THRESHOLD = 0.55
+# Only activate Claude when base score is close to the execution threshold.
+# FIX 2026-06-09 (auditoría H5): estaba en 0.55 pero el score combinado casi
+# nunca supera ~0.35 (el umbral de compra es ~0.23-0.30) → la capa Claude
+# estuvo muerta desde el 4-may (2,582 análisis antes, cero después).
+# 0.20 = se activa cuando la señal se acerca al umbral de ejecución real.
+ACTIVATION_THRESHOLD = 0.20
 # Claude's weight in the final score
 CLAUDE_WEIGHT = 0.20
 # Minimum seconds between Claude calls per symbol — 15 min is enough

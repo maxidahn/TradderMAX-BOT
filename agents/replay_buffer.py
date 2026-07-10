@@ -189,12 +189,19 @@ class ReplayBuffer:
             n    = len(entries)
             avg_pnl = sum(pnls) / n if n else 0.0
             avg_pct = sum(pcts) / n if n else 0.0
-            # Sharpe-like: avg / std * sqrt(n)
+            # Fitness risk-ajustado centrado en EXPECTATIVA NETA por trade.
+            # `pnl_pct` (mean) YA viene neto de fees + funding, así que la expectativa
+            # neta es el objetivo. El factor de confianza usa sqrt(min(n, CAP)):
+            # premia fiabilidad estadística pero ACOTADO — pasado CAP_TRADES, operar
+            # más NO sube el score. Antes era sqrt(n) sin tope, lo que sesgaba el
+            # aprendizaje (tournament/contagion) hacia agentes que sobre-operan.
             import math
+            CONF_TRADES_CAP = 40
             mean = avg_pct
             var  = sum((x - mean) ** 2 for x in pcts) / n if n > 0 else 0.0
             std  = math.sqrt(var) if var > 0 else 1.0
-            sharpe = (mean / std) * math.sqrt(n) if std > 0 else 0.0
+            conf = math.sqrt(min(n, CONF_TRADES_CAP))
+            sharpe = (mean / std) * conf if std > 0 else 0.0
             out[agent] = {
                 "trades":      n,
                 "wins":        wins,
@@ -203,6 +210,8 @@ class ReplayBuffer:
                 "total_pnl":   round(sum(pnls), 4),
                 "avg_pnl":     round(avg_pnl, 4),
                 "avg_pnl_pct": round(avg_pct, 3),
+                # Expectativa neta por trade (objetivo real del aprendizaje)
+                "net_expectancy_pct": round(mean, 4),
                 "sharpe":      round(sharpe, 3),
             }
         return out

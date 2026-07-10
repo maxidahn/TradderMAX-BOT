@@ -133,6 +133,13 @@
 <body>
 <div class="header">
     <h1>CELERITY TRADER <span style="font-size:11px;color:#5a7184;font-weight:400;">AI</span></h1>
+    <!-- ── Tabs principales ── -->
+    <div style="display:flex;gap:6px;margin-left:18px">
+        <button id="maintab-dashboard" onclick="switchMainTab('dashboard')"
+            style="font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 14px;border-radius:6px;border:1px solid #00d4aa;background:#001a15;color:#00d4aa;cursor:pointer">DASHBOARD</button>
+        <button id="maintab-tablero" onclick="switchMainTab('tablero')"
+            style="font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 14px;border-radius:6px;border:1px solid #1e2d3d;background:transparent;color:#5a7184;cursor:pointer">TABLERO</button>
+    </div>
     <div class="header-right">
         <div style="display:flex;align-items:center;gap:6px;font-size:12px" id="market-status"></div>
         <span class="badge" id="mode-badge">...</span>
@@ -140,7 +147,7 @@
     </div>
 </div>
 
-<div class="container">
+<div class="container" id="tab-dashboard">
     <!-- Controls -->
     <div class="card full-width" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div class="controls">
@@ -441,6 +448,57 @@
             <div class="card-title">Log Agents</div>
             <div class="log-console" id="agents-log" style="max-height:160px"></div>
         </div>
+    </div>
+</div>
+
+<!-- ══════════ TAB: TABLERO — scorecard de validación ══════════ -->
+<div class="container" id="tab-tablero" style="display:none">
+
+    <div class="card full-width" style="border-top:3px solid #00d4aa">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+                <div class="card-title" style="margin-bottom:4px">📋 Tablero de Validación</div>
+                <div style="font-size:11px;color:#5a7184">
+                    Sistema reformado el 9-jun-2026 · midiendo desde <span id="tb-start">—</span> ·
+                    El objetivo: <strong style="color:#00d4aa">expectativa neta &gt; 0 sobre una serie de 25 trades</strong> antes de subir riesgo (Douglas, Elder, Hougaard)
+                </div>
+            </div>
+            <span id="tb-verdict" style="font-size:13px;font-weight:800;padding:6px 16px;border-radius:10px;background:#1e2d3d;color:#5a7184">CARGANDO…</span>
+        </div>
+    </div>
+
+    <div class="card full-width">
+        <div class="card-title">Checklist para subir riesgo / volver a real</div>
+        <div id="tb-checklist"><span style="color:#5a7184;font-size:12px">Cargando…</span></div>
+    </div>
+
+    <div class="card full-width">
+        <div class="card-title">Serie de validación (desde la reforma)</div>
+        <div id="tb-serie-val" class="info-grid"></div>
+        <div id="tb-serie-progress" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card full-width">
+        <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div style="flex:1;min-width:280px">
+                <div class="card-title">Últimos 25 trades (incluye sistema viejo)</div>
+                <div id="tb-serie-25" class="info-grid"></div>
+            </div>
+            <div style="flex:1;min-width:280px">
+                <div class="card-title">Histórico completo</div>
+                <div id="tb-historico" class="info-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card full-width">
+        <div class="card-title">Regla del 6% mensual (Elder)</div>
+        <div id="tb-mes"><span style="color:#5a7184;font-size:12px">Cargando…</span></div>
+    </div>
+
+    <div class="card full-width" style="border-top:3px solid #ff8c00">
+        <div class="card-title" style="color:#ff8c00">⚡ Agentes de futuros (validación paper)</div>
+        <div id="tb-agentes"><span style="color:#5a7184;font-size:12px">Cargando…</span></div>
     </div>
 </div>
 
@@ -1309,6 +1367,146 @@ async function refreshAgents(){
 // Polling — el módulo agents se refresca cada 5s independiente del bot spot
 setInterval(refreshAgents, 5000);
 refreshAgents();
+
+// ════════════ TAB TABLERO — scorecard de validación ════════════
+let _mainTab = 'dashboard';
+
+function switchMainTab(tab){
+    _mainTab = tab;
+    const dash = document.getElementById('tab-dashboard');
+    const tabl = document.getElementById('tab-tablero');
+    const bDash = document.getElementById('maintab-dashboard');
+    const bTabl = document.getElementById('maintab-tablero');
+    const ON  = 'font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 14px;border-radius:6px;border:1px solid #00d4aa;background:#001a15;color:#00d4aa;cursor:pointer';
+    const OFF = 'font-size:11px;font-weight:700;letter-spacing:1px;padding:5px 14px;border-radius:6px;border:1px solid #1e2d3d;background:transparent;color:#5a7184;cursor:pointer';
+    if(tab === 'tablero'){
+        dash.style.display = 'none'; tabl.style.display = '';
+        bDash.style.cssText = OFF; bTabl.style.cssText = ON;
+        refreshTablero();
+    } else {
+        dash.style.display = ''; tabl.style.display = 'none';
+        bDash.style.cssText = ON; bTabl.style.cssText = OFF;
+    }
+}
+
+function tbMetricBox(label, value, color, sub){
+    return `<div class="info-item"><div class="info-label">${label}</div>
+        <div class="info-value" style="color:${color||'#e0e6ed'}">${value}</div>
+        ${sub?`<div style="font-size:9px;color:#5a7184;margin-top:2px">${sub}</div>`:''}</div>`;
+}
+
+function tbSeriesGrid(m){
+    if(!m || !m.n) return '<div class="info-item"><div class="info-label">Sin trades</div><div class="info-value neutral">0</div></div>';
+    const pnlC = m.pnl_total >= 0 ? '#00d4aa' : '#ff4757';
+    const expC = m.expectancy > 0 ? '#00d4aa' : '#ff4757';
+    const pfC  = (m.profit_factor||0) >= 1.3 ? '#00d4aa' : ((m.profit_factor||0) >= 1 ? '#ffa502' : '#ff4757');
+    const poC  = m.payoff !== null && m.required_payoff !== null
+        ? (m.payoff >= m.required_payoff ? '#00d4aa' : '#ff4757') : '#5a7184';
+    return tbMetricBox('Trades', m.n)
+        + tbMetricBox('PnL neto', '$'+m.pnl_total.toFixed(2), pnlC)
+        + tbMetricBox('Expectativa/trade', '$'+m.expectancy.toFixed(3), expC, 'el número que manda')
+        + tbMetricBox('Win rate', m.win_rate+'%')
+        + tbMetricBox('Payoff', (m.payoff??'—'), poC, 'necesita ≥ '+(m.required_payoff??'—')+' para su WR')
+        + tbMetricBox('Profit factor', (m.profit_factor??'—'), pfC, 'objetivo ≥ 1.3')
+        + tbMetricBox('Gan. media', '$'+m.avg_win.toFixed(3), '#00d4aa')
+        + tbMetricBox('Pérd. media', '$'+m.avg_loss.toFixed(3), '#ff4757')
+        + tbMetricBox('Fees', '$'+m.fees.toFixed(2), '#ffa502',
+            m.fees_vs_gross_win_pct !== null ? m.fees_vs_gross_win_pct+'% de las ganancias brutas' : '');
+}
+
+async function refreshTablero(){
+    try{
+        const r = await fetch('/api/tablero');
+        const d = await r.json();
+
+        document.getElementById('tb-start').textContent = (d.validation_start||'').slice(0,16).replace('T',' ')+' UTC';
+
+        // ── Checklist ──
+        const cl = d.checklist || [];
+        const passed = cl.filter(c => c.ok === true).length;
+        const failed = cl.filter(c => c.ok === false).length;
+        document.getElementById('tb-checklist').innerHTML = cl.map(c => {
+            const icon  = c.ok === true ? '✅' : (c.ok === false ? '❌' : '⏳');
+            const color = c.ok === true ? '#00d4aa' : (c.ok === false ? '#ff4757' : '#5a7184');
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#0d1520;border-radius:8px;margin-bottom:6px;border-left:3px solid ${color}">
+                <span style="font-size:12px;color:#e0e6ed">${icon} ${c.label}</span>
+                <span style="font-size:12px;color:${color};font-weight:700">${c.value} <span style="color:#5a7184;font-weight:400">(meta: ${c.target})</span></span>
+            </div>`;
+        }).join('');
+
+        // ── Veredicto general ──
+        const v = document.getElementById('tb-verdict');
+        const nVal = (d.serie_validacion||{}).n || 0;
+        if(nVal < d.target_n){
+            v.textContent = `EN VALIDACIÓN — ${nVal}/${d.target_n} trades`;
+            v.style.cssText = 'font-size:13px;font-weight:800;padding:6px 16px;border-radius:10px;background:#1a1500;color:#ffa502;border:1px solid #ffa50240';
+        } else if(failed === 0){
+            v.textContent = '✅ LISTO PARA SUBIR RIESGO';
+            v.style.cssText = 'font-size:13px;font-weight:800;padding:6px 16px;border-radius:10px;background:#001a15;color:#00d4aa;border:1px solid #00d4aa40';
+        } else {
+            v.textContent = `❌ SIN EDGE TODAVÍA (${passed}/${cl.length} checks)`;
+            v.style.cssText = 'font-size:13px;font-weight:800;padding:6px 16px;border-radius:10px;background:#1a0000;color:#ff4757;border:1px solid #ff475740';
+        }
+
+        // ── Series ──
+        document.getElementById('tb-serie-val').innerHTML = tbSeriesGrid(d.serie_validacion);
+        document.getElementById('tb-serie-25').innerHTML  = tbSeriesGrid(d.serie_25);
+        document.getElementById('tb-historico').innerHTML = tbSeriesGrid(d.historico);
+
+        // Progreso hacia los 25 trades
+        const pct = Math.min(100, Math.round(nVal / d.target_n * 100));
+        document.getElementById('tb-serie-progress').innerHTML = `
+            <div style="font-size:11px;color:#5a7184;margin-bottom:4px">Progreso de la serie: ${nVal}/${d.target_n} trades — no tocar parámetros hasta completarla (Steenbarger)</div>
+            <div style="height:10px;background:#0d1821;border-radius:6px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:linear-gradient(to right,#ffa502,#00d4aa);border-radius:6px;transition:width .5s"></div>
+            </div>`;
+
+        // ── Mes / regla 6% ──
+        const mes = d.mes || {};
+        const mesC = mes.blocked ? '#ff4757' : (mes.pnl < 0 ? '#ffa502' : '#00d4aa');
+        document.getElementById('tb-mes').innerHTML = `
+            <div class="info-grid">
+                ${tbMetricBox('Mes', mes.month||'—')}
+                ${tbMetricBox('PnL del mes', '$'+(mes.pnl??0).toFixed(2), mesC)}
+                ${tbMetricBox('Trades del mes', mes.trades??0)}
+                ${tbMetricBox('Capital base', mes.capital !== null && mes.capital !== undefined ? '$'+mes.capital.toFixed(0) : '—')}
+                ${tbMetricBox('Límite 6%', mes.limit !== null && mes.limit !== undefined ? '$'+mes.limit.toFixed(2) : '—', '#ff4757', 'si el PnL del mes lo toca, no hay entradas nuevas hasta el mes próximo')}
+                ${tbMetricBox('Estado', mes.blocked ? '🛑 BLOQUEADO' : '✓ Operando', mes.blocked ? '#ff4757' : '#00d4aa')}
+            </div>`;
+
+        // ── Agentes ──
+        const ag = d.agentes || {};
+        const st = ag.stats || {};
+        const ml = ag.online_ml || {};
+        let agHtml = `<div style="font-size:11px;color:#5a7184;margin-bottom:8px">Modo: <strong style="color:${ag.mode==='LIVE'?'#ff4757':'#ffa502'}">${ag.mode||'—'}</strong> · El tournament evalúa por series de 25 trades; el OnlineML necesita 30 samples + accuracy &gt;50% para opinar</div>`;
+        const names = Object.keys(st);
+        if(names.length === 0){
+            agHtml += '<span style="color:#5a7184;font-size:12px">Sin trades cerrados aún en esta serie</span>';
+        } else {
+            agHtml += names.map(n => {
+                const s = st[n]; const m = ml[n] || {};
+                const expC = (s.net_expectancy_pct||0) > 0 ? '#00d4aa' : '#ff4757';
+                return `<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:9px 12px;background:#0d1520;border-radius:8px;margin-bottom:6px">
+                    <strong style="min-width:130px">${n}</strong>
+                    <span style="font-size:11px;color:#5a7184">trades <strong style="color:#e0e6ed">${s.trades}</strong>/25</span>
+                    <span style="font-size:11px;color:#5a7184">expectativa <strong style="color:${expC}">${(s.net_expectancy_pct||0).toFixed(3)}%</strong></span>
+                    <span style="font-size:11px;color:#5a7184">WR <strong style="color:#e0e6ed">${s.win_rate}%</strong></span>
+                    <span style="font-size:11px;color:#5a7184">PnL <strong style="color:${s.total_pnl>=0?'#00d4aa':'#ff4757'}">$${s.total_pnl}</strong></span>
+                    <span style="font-size:11px;color:#5a7184">ML: <strong style="color:#e0e6ed">${m.samples||0}/30 samples</strong>${m.samples>0?` · acc ${Math.round((m.accuracy||0)*100)}%`:''}</span>
+                </div>`;
+            }).join('');
+        }
+        if(ag.last_tournament){
+            agHtml += `<div style="font-size:11px;color:#5a7184;margin-top:6px">Último tournament: <strong style="color:#e0e6ed">${ag.last_tournament.event}</strong> — ${(ag.last_tournament.reason||'').slice(0,100)}</div>`;
+        }
+        document.getElementById('tb-agentes').innerHTML = agHtml;
+    }catch(e){
+        console.error('tablero refresh failed', e);
+    }
+}
+
+// Refresco automático del tablero cada 30s (solo si está visible)
+setInterval(() => { if(_mainTab === 'tablero') refreshTablero(); }, 30000);
 
 </script>
 </body>

@@ -34,6 +34,11 @@ class Position:
     entry_fee: float = 0.0       # Fee paid on entry
     peak_price: float = 0.0     # Highest price seen since entry (trailing stop anchor)
     partial_tp_taken: bool = False  # True once the 50% partial exit has fired
+    # ── Stops por ATR (auditoría 2026-06-09, P1) ──────────────────────────────
+    # SL/TP calculados con la volatilidad real (ATR) al momento de la entrada.
+    # 0.0 = no asignado → el bot usa los % del risk_level como fallback.
+    sl_pct: float = 0.0
+    tp_pct: float = 0.0
 
 
 @dataclass
@@ -116,6 +121,8 @@ class BinanceTrader:
                     usdt_amount=p["usdt_amount"], entry_time=p["entry_time"],
                     order_id=p.get("order_id", ""), entry_fee=p.get("entry_fee", 0),
                     peak_price=peak,
+                    sl_pct=p.get("sl_pct", 0.0),
+                    tp_pct=p.get("tp_pct", 0.0),
                 )
             except Exception as e:
                 logger.warning(f"Could not restore position {sym}: {e}")
@@ -466,7 +473,8 @@ class BinanceTrader:
             logger.error(f"get_portfolio_value error: {e}")
             return {"error": str(e), "total": 0.0}
 
-    def place_buy(self, symbol: str, usdt_amount: float) -> Optional[Position]:
+    def place_buy(self, symbol: str, usdt_amount: float,
+                  sl_pct: float = 0.0, tp_pct: float = 0.0) -> Optional[Position]:
         """
         Place a market buy order.
         Checks spread before execution and tracks entry fee.
@@ -474,6 +482,7 @@ class BinanceTrader:
         Args:
             symbol: Trading pair (e.g., 'BTCUSDT')
             usdt_amount: Amount in USDT to spend
+            sl_pct / tp_pct: stops por ATR calculados a la entrada (0 = usar risk_level)
 
         Returns:
             Position object if successful
@@ -588,6 +597,8 @@ class BinanceTrader:
                 order_id=str(order.get("orderId", "")),
                 entry_fee=entry_fee,
                 peak_price=fill_price,  # Trailing stop starts from entry price
+                sl_pct=sl_pct,
+                tp_pct=tp_pct,
             )
 
             self.positions[symbol] = position
@@ -810,24 +821,70 @@ class BinanceTrader:
                 f"Fees: -${total_fees:.4f} | "
                 f"NET: {sign}${pnl_net:.4f} ({sign}{pnl_net_pct:.2f}%)"
             )
-            # ─── Persist after every trade ───
-            persistence.save_trade_history(self.trade_history)
-            persistence.save_open_positions(self.positions)
-            persistence.save_ml_feedback({
-                "symbol":            symbol,
-                "entry_price":       position.entry_price,
-                "exit_price":        fill_price,
-                "entry_time":        position.entry_time,
-                "exit_time":         datetime.now(timezone.utc).isoformat(),
-                "pnl_pct":           round(pnl_net_pct, 4),
-                "profitable":        pnl_net > 0,
-                "reason":            reason,
-            })
+            # ─── Persist after every trade ─────────────────────────────────────
+            # IMPORTANT: each save is wrapped independently so a write failure
+            # in one step never prevents open_positions from being updated.
+            # open_positions MUST be saved first — it's the source of truth that
+            # prevents ghost positions from reappearing after a restart.
+            try:
+                persistence.save_open_positions(self.positions)
+            except Exception as pe:
+                logger.error(f"CRITICAL: failed to save open_positions after SELL {symbol}: {pe}")
+            try:
+                persistence.save_trade_history(self.trade_history)
+            except Exception as pe:
+                logger.error(f"Failed to save trade_history after SELL {symbol}: {pe}")
+            try:
+                persistence.save_ml_feedback({
+                    "symbol":            symbol,
+                    "entry_price":       position.entry_price,
+                    "exit_price":        fill_price,
+                    "entry_time":        position.entry_time,
+                    "exit_time":         datetime.now(timezone.utc).isoformat(),
+                    "pnl_pct":           round(pnl_net_pct, 4),
+                    "profitable":        pnl_net > 0,
+                    "reason":            reason,
+                })
+            except Exception as pe:
+                logger.error(f"Failed to save ml_feedback after SELL {symbol}: {pe}")
             return record
 
         except Exception as e:
             logger.error(f"SELL order failed for {symbol}: {e}")
+            # ── Ghost-position guard ────────────────────────────────────────────
+            # APIError -2010 means Binance rejected the sell because we don't
+            # actually hold the asset (position already closed outside the bot,
+            # or a previous sell succeeded but persistence failed).
+            # Remove the stale in-memory position so we stop retrying forever.
+            error_str = str(e)
+            if "-2010" in error_str or "insufficient balance" in error_str.lower():
+                if symbol in self.positions:
+                    logger.warning(
+                        f"SELL {symbol}: insufficient balance → treating as ghost position "
+                        f"(entry ${self.positions[symbol].entry_price}) — removing from positions"
+                    )
+                    del self.positions[symbol]
+                    try:
+                        persistence.save_open_positions(self.positions)
+                    except Exception as pe:
+                        logger.error(f"Failed to save open_positions after ghost removal {symbol}: {pe}")
             return None
+
+    def get_monthly_stats(self) -> Dict:
+        """
+        PnL del mes calendario actual (UTC) — para la regla del 6% de Elder:
+        si las pérdidas del mes alcanzan el 6% del capital, no se abren
+        posiciones nuevas hasta el mes siguiente.
+        """
+        from datetime import date
+        month = date.today().isoformat()[:7]  # "2026-06"
+        monthly = [t for t in self.trade_history if t.timestamp and t.timestamp[:7] == month]
+        pnl = sum(t.pnl for t in monthly)
+        return {
+            "month":  month,
+            "trades": len(monthly),
+            "pnl":    round(pnl, 4),
+        }
 
     def get_daily_stats(self) -> Dict:
         """

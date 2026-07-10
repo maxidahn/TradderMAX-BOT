@@ -203,36 +203,54 @@ class Tournament:
             self._append_log(event)
             return event
 
-        # Rank by Sharpe
-        ranked = sorted(eligible, key=lambda a: stats[a.name]["sharpe"], reverse=True)
+        # ── Rank por EXPECTATIVA NETA (fix 2026-06-09, auditoría P2) ─────────
+        # Antes se rankeaba por Sharpe-like sobre 3-8 trades = ruido puro
+        # (Steenbarger: no optimizar sobre muestras chicas). La expectativa
+        # neta por trade (pnl_pct medio, ya neto de fees+funding) es el
+        # objetivo real del negocio; el Sharpe queda como desempate/telemetría.
+        FITNESS_KEY = "net_expectancy_pct"
+        ranked = sorted(
+            eligible,
+            key=lambda a: (stats[a.name].get(FITNESS_KEY, 0.0), stats[a.name].get("sharpe", 0.0)),
+            reverse=True,
+        )
         winner = ranked[0]
         loser  = ranked[-1]
-        win_sharpe = stats[winner.name]["sharpe"]
-        lose_sharpe = stats[loser.name]["sharpe"]
+        win_exp  = stats[winner.name].get(FITNESS_KEY, 0.0)
+        lose_exp = stats[loser.name].get(FITNESS_KEY, 0.0)
+        win_sharpe = stats[winner.name].get("sharpe", 0.0)
+        lose_sharpe = stats[loser.name].get("sharpe", 0.0)
 
-        # ── Caso A: ambos van mal → modo defensivo ───────────────────────────
-        if win_sharpe < 0 and lose_sharpe < 0:
+        # ── Caso A: ambos con expectativa negativa → modo defensivo ──────────
+        # FIX 2026-06-09 (auditoría: conflicto reflection vs defensive_mode):
+        # el modo defensivo YA NO toca sl_pct. Antes lo recortaba a ≤1.2%, que
+        # en mercado volátil significa stop dentro del ruido → más stop-outs →
+        # peor performance → más defensive mode (círculo vicioso), y además
+        # pisaba lo que la capa reflection sugería (agrandar el SL según ATR).
+        # Ahora solo: (1) exige más convicción para entrar y (2) el sizing ya
+        # se reduce vía confidence (orchestrator: notional × conf). El SL es
+        # territorio exclusivo de reflection/ATR.
+        if win_exp < 0 and lose_exp < 0:
             event = {
                 "event":          "defensive_mode",
-                "reason":         f"both agents Sharpe<0 (winner: {win_sharpe:.2f}, loser: {lose_sharpe:.2f})",
+                "reason":         f"both agents net expectancy<0 (winner: {win_exp:.3f}%, loser: {lose_exp:.3f}%)",
                 "stats":          stats,
-                "applied":        "min_confidence raised to 0.70, sl tightened",
+                "applied":        "min_confidence raised to 0.65 (sl_pct NO se toca — reflection/ATR mandan)",
                 "bandit_actions": bandit_actions,
             }
             for a in self.agents:
-                a.params.min_confidence = max(a.params.min_confidence, 0.70)
-                a.params.sl_pct = min(a.params.sl_pct, 1.2)
+                a.params.min_confidence = max(a.params.min_confidence, 0.65)
             self._save_params()
             self._append_log(event)
-            logger.warning(f"[Tournament] DEFENSIVE MODE — both agents underperforming")
+            logger.warning(f"[Tournament] DEFENSIVE MODE — both agents underperforming (sl_pct untouched)")
             return event
 
         # ── Caso B: edge insuficiente → no hacer nada ────────────────────────
-        if win_sharpe <= 0 or lose_sharpe == 0:
+        if win_exp <= 0:
             edge_pct = 0
         else:
-            # Edge: cuánto mejor es ganador vs perdedor (en términos de Sharpe normalizado)
-            edge_pct = ((win_sharpe - lose_sharpe) / max(abs(lose_sharpe), 0.01)) * 100
+            # Edge: diferencia de expectativa relativa al perdedor
+            edge_pct = ((win_exp - lose_exp) / max(abs(lose_exp), 0.01)) * 100
 
         if winner.name == loser.name or edge_pct < self.cfg.tournament_min_edge_pct:
             event = {
@@ -260,6 +278,8 @@ class Tournament:
             "event":            "crossover",
             "winner":           winner.name,
             "loser":            loser.name,
+            "winner_expectancy": round(win_exp, 4),
+            "loser_expectancy":  round(lose_exp, 4),
             "winner_sharpe":    round(win_sharpe, 3),
             "loser_sharpe":     round(lose_sharpe, 3),
             "edge_pct":         round(edge_pct, 1),
@@ -271,8 +291,8 @@ class Tournament:
         }
         self._append_log(event)
         logger.info(
-            f"[Tournament] CROSSOVER — {winner.name} (Sharpe {win_sharpe:.2f}) "
-            f"colonized {loser.name} (Sharpe {lose_sharpe:.2f}) — edge {edge_pct:.0f}%"
+            f"[Tournament] CROSSOVER — {winner.name} (exp {win_exp:+.3f}%) "
+            f"colonized {loser.name} (exp {lose_exp:+.3f}%) — edge {edge_pct:.0f}%"
         )
         return event
 
@@ -313,10 +333,11 @@ class Tournament:
                 "win_rate":    s.get("win_rate", 0.0),
                 "total_pnl":   s.get("total_pnl", 0.0),
                 "avg_pnl_pct": s.get("avg_pnl_pct", 0.0),
+                "net_expectancy_pct": s.get("net_expectancy_pct", 0.0),
                 "sharpe":      s.get("sharpe", 0.0),
                 "params":      asdict(agent.params),
             })
-        return sorted(rows, key=lambda r: r["sharpe"], reverse=True)
+        return sorted(rows, key=lambda r: (r["net_expectancy_pct"], r["sharpe"]), reverse=True)
 
     def get_recent_events(self, limit: int = 20) -> List[dict]:
         if not os.path.exists(TOURNAMENT_LOG):

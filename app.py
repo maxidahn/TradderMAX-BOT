@@ -373,6 +373,151 @@ def api_config():
     })
 
 
+# ─── Tablero de validación (auditoría 2026-06-09) ───
+
+VALIDATION_START_FILE = os.path.join(os.getenv("DATA_DIR", "data"), "validation_start.json")
+
+
+def _load_validation_start() -> str:
+    try:
+        import json as _json
+        with open(VALIDATION_START_FILE) as f:
+            return _json.load(f).get("validation_start", "2026-06-09T19:00:00+00:00")
+    except Exception:
+        return "2026-06-09T19:00:00+00:00"
+
+
+def _series_metrics(sells: list) -> dict:
+    """Métricas de una serie de trades cerrados (TradeRecord, side=SELL)."""
+    n = len(sells)
+    if n == 0:
+        return {"n": 0}
+    wins   = [t.pnl for t in sells if t.pnl > 0]
+    losses = [t.pnl for t in sells if t.pnl <= 0]
+    pnl_total = sum(t.pnl for t in sells)
+    fees      = sum(t.total_fees for t in sells)
+    gross_win  = sum(wins)
+    gross_loss = abs(sum(losses))
+    win_rate = len(wins) / n * 100
+    avg_win  = (sum(wins) / len(wins)) if wins else 0.0
+    avg_loss = abs(sum(losses) / len(losses)) if losses else 0.0
+    payoff   = (avg_win / avg_loss) if avg_loss > 0 else None
+    # Payoff de breakeven dado el win rate: (1-wr)/wr (Hougaard, knowledge/03)
+    wr = win_rate / 100
+    required_payoff = ((1 - wr) / wr) if wr > 0 else None
+    return {
+        "n":              n,
+        "pnl_total":      round(pnl_total, 4),
+        "expectancy":     round(pnl_total / n, 4),
+        "win_rate":       round(win_rate, 1),
+        "avg_win":        round(avg_win, 4),
+        "avg_loss":       round(avg_loss, 4),
+        "payoff":         round(payoff, 2) if payoff is not None else None,
+        "required_payoff": round(required_payoff, 2) if required_payoff is not None else None,
+        "profit_factor":  round(gross_win / gross_loss, 2) if gross_loss > 0 else None,
+        "fees":           round(fees, 4),
+        "fees_vs_gross_win_pct": round(fees / gross_win * 100, 1) if gross_win > 0 else None,
+    }
+
+
+@app.route("/api/tablero")
+def api_tablero():
+    """
+    Scorecard de validación del sistema reformado (2026-06-09).
+    Mide si el bot está listo para subir riesgo/pasar a real:
+    expectativa neta positiva sobre series de ≥25 trades (Douglas),
+    payoff suficiente para el win rate (Hougaard), profit factor >1.3,
+    regla del 6% mensual (Elder) y estado de aprendizaje de los agentes.
+    """
+    v_start = _load_validation_start()
+    sells_all = [t for t in bot.trader.trade_history if t.side == "SELL"]
+
+    # Serie de validación: trades cerrados desde el deploy del sistema nuevo
+    sells_validation = [t for t in sells_all if t.timestamp and t.timestamp >= v_start]
+    # Última serie de 25 (contexto histórico)
+    sells_last25 = sells_all[-25:]
+
+    m_val   = _series_metrics(sells_validation)
+    m_25    = _series_metrics(sells_last25)
+    m_total = _series_metrics(sells_all)
+
+    # ── Checklist de objetivos para subir riesgo / pasar a real ──────────────
+    TARGET_N = 25
+    checks = []
+    def _check(label, ok, value, target):
+        checks.append({"label": label, "ok": ok, "value": value, "target": target})
+
+    n_val = m_val.get("n", 0)
+    enough = n_val >= TARGET_N
+    _check("Muestra mínima (serie de validación)",
+           True if enough else None, f"{n_val} trades", f"≥ {TARGET_N} trades")
+    _check("Expectativa neta por trade > 0",
+           (m_val.get("expectancy", 0) > 0) if enough else None,
+           f"${m_val.get('expectancy', 0):.3f}" if n_val else "—", "> $0")
+    _check("Profit factor ≥ 1.3",
+           (m_val.get("profit_factor") or 0) >= 1.3 if enough else None,
+           m_val.get("profit_factor") if n_val else "—", "≥ 1.3")
+    pf_ok = None
+    if enough and m_val.get("payoff") is not None and m_val.get("required_payoff") is not None:
+        pf_ok = m_val["payoff"] >= m_val["required_payoff"] * 1.2
+    _check("Payoff (gan.media/pérd.media) cubre el win rate +20%",
+           pf_ok,
+           f"{m_val.get('payoff', '—')} (necesita {m_val.get('required_payoff', '—')})" if n_val else "—",
+           "payoff ≥ breakeven × 1.2")
+    _check("Fees < 30% de las ganancias brutas",
+           (m_val.get("fees_vs_gross_win_pct") or 999) < 30 if enough else None,
+           f"{m_val.get('fees_vs_gross_win_pct', '—')}%" if n_val else "—", "< 30%")
+
+    # ── Regla 6% mensual (Elder) ─────────────────────────────────────────────
+    monthly = bot.trader.get_monthly_stats()
+    capital_base = None
+    try:
+        if bot.trader.connected:
+            capital_base = (
+                bot.trader.get_balance("USDC")
+                + sum(p.usdt_amount for p in bot.trader.positions.values())
+            )
+    except Exception:
+        pass
+    monthly_limit = round(-(6.0 / 100.0) * capital_base, 2) if capital_base else None
+    monthly_blocked = (capital_base is not None and monthly["pnl"] <= monthly_limit)
+
+    # ── Agentes (paper) ──────────────────────────────────────────────────────
+    agentes = {}
+    if agents_orchestrator:
+        try:
+            stats = agents_orchestrator.replay.stats_per_agent()
+            ml = {name: lr.get_state() for name, lr in (agents_orchestrator.online_learners or {}).items()}
+            events = agents_orchestrator.tournament.get_recent_events(limit=1)
+            agentes = {
+                "stats": stats,
+                "online_ml": ml,
+                "last_tournament": events[-1] if events else None,
+                "mode": "PAPER" if config.futures.paper_trade else "LIVE",
+            }
+        except Exception as e:
+            agentes = {"error": str(e)}
+
+    return jsonify({
+        "validation_start": v_start,
+        "serie_validacion": m_val,
+        "serie_25":         m_25,
+        "historico":        m_total,
+        "checklist":        checks,
+        "target_n":         TARGET_N,
+        "mes": {
+            "month":   monthly["month"],
+            "pnl":     monthly["pnl"],
+            "trades":  monthly["trades"],
+            "capital": round(capital_base, 2) if capital_base else None,
+            "limit":   monthly_limit,
+            "blocked": monthly_blocked,
+        },
+        "agentes":    agentes,
+        "risk_level": config.risk_level,
+    })
+
+
 # ─── Multi-Agent Futures endpoints (optional module) ───
 
 @app.route("/api/agents/status")

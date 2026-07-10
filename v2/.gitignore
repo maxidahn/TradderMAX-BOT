@@ -1,0 +1,9 @@
+# Nunca subir secretos ni el entorno virtual
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Estado de runtime (se regenera solo; en la nube usá un volumen de Railway)
+data/*.json

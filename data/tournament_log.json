@@ -618,5 +618,2868 @@
     "applied": "min_confidence raised to 0.70, sl tightened",
     "bandit_actions": [],
     "timestamp": "2026-05-22T13:29:52.704543+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-22T16:02:06.161494+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-22T17:48:10.232141+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-22T23:55:55.707820+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-23T06:04:54.336399+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-23T12:18:10.542708+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-23T18:20:30.867109+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.47)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 13,
+        "wins": 5,
+        "losses": 8,
+        "win_rate": 38.5,
+        "total_pnl": -0.72,
+        "avg_pnl": -0.0554,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.469
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-24T00:20:36.705179+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-24T06:20:41.093222+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-24T12:21:09.338530+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v3",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-05-24T18:25:33.843435+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-25T00:37:31.956948+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-25T06:41:24.922924+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-25T12:48:25.096884+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-26T13:08:49.477007+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.58)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 14,
+        "wins": 5,
+        "losses": 9,
+        "win_rate": 35.7,
+        "total_pnl": -0.7647,
+        "avg_pnl": -0.0546,
+        "avg_pnl_pct": -0.344,
+        "sharpe": -1.583
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-05-26T19:09:03.532932+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.37)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 15,
+        "wins": 6,
+        "losses": 9,
+        "win_rate": 40.0,
+        "total_pnl": -0.6851,
+        "avg_pnl": -0.0457,
+        "avg_pnl_pct": -0.288,
+        "sharpe": -1.371
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-27T01:17:49.009695+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.37)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 15,
+        "wins": 6,
+        "losses": 9,
+        "win_rate": 40.0,
+        "total_pnl": -0.6851,
+        "avg_pnl": -0.0457,
+        "avg_pnl_pct": -0.288,
+        "sharpe": -1.371
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-27T07:26:35.923193+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.66)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 16,
+        "wins": 6,
+        "losses": 10,
+        "win_rate": 37.5,
+        "total_pnl": -0.859,
+        "avg_pnl": -0.0537,
+        "avg_pnl_pct": -0.335,
+        "sharpe": -1.658
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-27T13:32:26.469758+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -2.00)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 17,
+        "wins": 6,
+        "losses": 11,
+        "win_rate": 35.3,
+        "total_pnl": -1.0472,
+        "avg_pnl": -0.0616,
+        "avg_pnl_pct": -0.403,
+        "sharpe": -2.002
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-05-27T19:32:46.071884+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.60)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 18,
+        "wins": 7,
+        "losses": 11,
+        "win_rate": 38.9,
+        "total_pnl": -0.8858,
+        "avg_pnl": -0.0492,
+        "avg_pnl_pct": -0.327,
+        "sharpe": -1.603
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-28T01:32:50.863743+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.06)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 19,
+        "wins": 8,
+        "losses": 11,
+        "win_rate": 42.1,
+        "total_pnl": -0.6349,
+        "avg_pnl": -0.0334,
+        "avg_pnl_pct": -0.229,
+        "sharpe": -1.064
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-28T07:33:01.850714+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.06)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 19,
+        "wins": 8,
+        "losses": 11,
+        "win_rate": 42.1,
+        "total_pnl": -0.6349,
+        "avg_pnl": -0.0334,
+        "avg_pnl_pct": -0.229,
+        "sharpe": -1.064
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-28T13:33:04.487543+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -0.58, loser: -1.30)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 20,
+        "wins": 8,
+        "losses": 12,
+        "win_rate": 40.0,
+        "total_pnl": -0.8046,
+        "avg_pnl": -0.0402,
+        "avg_pnl_pct": -0.271,
+        "sharpe": -1.296
+      },
+      "ReversalSniper": {
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": 40.0,
+        "total_pnl": -0.088,
+        "avg_pnl": -0.0176,
+        "avg_pnl_pct": -0.129,
+        "sharpe": -0.584
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-28T14:30:49.341936+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.25, loser: -1.30)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 20,
+        "wins": 8,
+        "losses": 12,
+        "win_rate": 40.0,
+        "total_pnl": -0.8046,
+        "avg_pnl": -0.0402,
+        "avg_pnl_pct": -0.271,
+        "sharpe": -1.296
+      },
+      "ReversalSniper": {
+        "trades": 6,
+        "wins": 2,
+        "losses": 4,
+        "win_rate": 33.3,
+        "total_pnl": -0.2673,
+        "avg_pnl": -0.0445,
+        "avg_pnl_pct": -0.31,
+        "sharpe": -1.253
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-28T20:31:14.801146+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.25, loser: -1.35)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 21,
+        "wins": 8,
+        "losses": 13,
+        "win_rate": 38.1,
+        "total_pnl": -0.8394,
+        "avg_pnl": -0.04,
+        "avg_pnl_pct": -0.268,
+        "sharpe": -1.35
+      },
+      "ReversalSniper": {
+        "trades": 6,
+        "wins": 2,
+        "losses": 4,
+        "win_rate": 33.3,
+        "total_pnl": -0.2673,
+        "avg_pnl": -0.0445,
+        "avg_pnl_pct": -0.31,
+        "sharpe": -1.253
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-29T02:40:29.688361+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.25, loser: -1.57)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 22,
+        "wins": 8,
+        "losses": 14,
+        "win_rate": 36.4,
+        "total_pnl": -1.0017,
+        "avg_pnl": -0.0455,
+        "avg_pnl_pct": -0.304,
+        "sharpe": -1.575
+      },
+      "ReversalSniper": {
+        "trades": 6,
+        "wins": 2,
+        "losses": 4,
+        "win_rate": 33.3,
+        "total_pnl": -0.2673,
+        "avg_pnl": -0.0445,
+        "avg_pnl_pct": -0.31,
+        "sharpe": -1.253
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-29T08:46:20.032801+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.25, loser: -1.57)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 22,
+        "wins": 8,
+        "losses": 14,
+        "win_rate": 36.4,
+        "total_pnl": -1.0017,
+        "avg_pnl": -0.0455,
+        "avg_pnl_pct": -0.304,
+        "sharpe": -1.575
+      },
+      "ReversalSniper": {
+        "trades": 6,
+        "wins": 2,
+        "losses": 4,
+        "win_rate": 33.3,
+        "total_pnl": -0.2673,
+        "avg_pnl": -0.0445,
+        "avg_pnl_pct": -0.31,
+        "sharpe": -1.253
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-29T14:46:27.393752+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.81)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 23,
+        "wins": 8,
+        "losses": 15,
+        "win_rate": 34.8,
+        "total_pnl": -1.1847,
+        "avg_pnl": -0.0515,
+        "avg_pnl_pct": -0.34,
+        "sharpe": -1.809
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v3",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-05-29T20:57:25.496607+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.78, loser: -1.80)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 24,
+        "wins": 9,
+        "losses": 15,
+        "win_rate": 37.5,
+        "total_pnl": -1.1739,
+        "avg_pnl": -0.0489,
+        "avg_pnl_pct": -0.323,
+        "sharpe": -1.785
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-30T02:58:25.770686+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.78, loser: -1.80)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 24,
+        "wins": 9,
+        "losses": 15,
+        "win_rate": 37.5,
+        "total_pnl": -1.1739,
+        "avg_pnl": -0.0489,
+        "avg_pnl_pct": -0.323,
+        "sharpe": -1.785
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-30T09:06:59.186889+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.85)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 25,
+        "wins": 9,
+        "losses": 16,
+        "win_rate": 36.0,
+        "total_pnl": -1.2187,
+        "avg_pnl": -0.0487,
+        "avg_pnl_pct": -0.321,
+        "sharpe": -1.848
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-30T15:07:14.675819+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.85)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 25,
+        "wins": 9,
+        "losses": 16,
+        "win_rate": 36.0,
+        "total_pnl": -1.2187,
+        "avg_pnl": -0.0487,
+        "avg_pnl_pct": -0.321,
+        "sharpe": -1.848
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-30T21:13:16.594339+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.85)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 25,
+        "wins": 9,
+        "losses": 16,
+        "win_rate": 36.0,
+        "total_pnl": -1.2187,
+        "avg_pnl": -0.0487,
+        "avg_pnl_pct": -0.321,
+        "sharpe": -1.848
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-31T03:19:20.019977+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.89)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 26,
+        "wins": 9,
+        "losses": 17,
+        "win_rate": 34.6,
+        "total_pnl": -1.2392,
+        "avg_pnl": -0.0477,
+        "avg_pnl_pct": -0.315,
+        "sharpe": -1.885
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-31T09:49:45.874067+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.89)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 26,
+        "wins": 9,
+        "losses": 17,
+        "win_rate": 34.6,
+        "total_pnl": -1.2392,
+        "avg_pnl": -0.0477,
+        "avg_pnl_pct": -0.315,
+        "sharpe": -1.885
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-31T16:22:09.222888+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.89)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 26,
+        "wins": 9,
+        "losses": 17,
+        "win_rate": 34.6,
+        "total_pnl": -1.2392,
+        "avg_pnl": -0.0477,
+        "avg_pnl_pct": -0.315,
+        "sharpe": -1.885
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-05-31T22:27:13.514372+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.09)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 27,
+        "wins": 9,
+        "losses": 18,
+        "win_rate": 33.3,
+        "total_pnl": -1.4064,
+        "avg_pnl": -0.0521,
+        "avg_pnl_pct": -0.341,
+        "sharpe": -2.094
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-01T04:33:33.829520+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.09)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 27,
+        "wins": 9,
+        "losses": 18,
+        "win_rate": 33.3,
+        "total_pnl": -1.4064,
+        "avg_pnl": -0.0521,
+        "avg_pnl_pct": -0.341,
+        "sharpe": -2.094
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-01T10:43:18.722212+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -1.88)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 28,
+        "wins": 10,
+        "losses": 18,
+        "win_rate": 35.7,
+        "total_pnl": -1.2955,
+        "avg_pnl": -0.0463,
+        "avg_pnl_pct": -0.303,
+        "sharpe": -1.88
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-01T16:43:19.550492+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-01T22:39:52.188470+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-02T04:46:43.121632+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-02T10:55:29.820084+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-02T16:55:30.938892+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v3",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-02T22:55:35.710749+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-03T05:02:08.933555+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-03T11:03:24.326583+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-03T14:21:26.148635+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -1.80, loser: -2.10)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 29,
+        "wins": 10,
+        "losses": 19,
+        "win_rate": 34.5,
+        "total_pnl": -1.4831,
+        "avg_pnl": -0.0511,
+        "avg_pnl_pct": -0.331,
+        "sharpe": -2.095
+      },
+      "ReversalSniper": {
+        "trades": 7,
+        "wins": 2,
+        "losses": 5,
+        "win_rate": 28.6,
+        "total_pnl": -0.4349,
+        "avg_pnl": -0.0621,
+        "avg_pnl_pct": -0.437,
+        "sharpe": -1.802
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-05T15:02:50.282736+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-05T21:02:57.831263+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-06T03:03:15.068220+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-06T09:03:32.820950+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-06T15:22:00.490813+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-06T21:24:30.270236+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-08T03:38:21.372031+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-08T09:39:37.424393+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-08T15:40:07.189783+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-08T21:40:39.790353+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-09T03:41:08.088270+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-09T09:41:23.503317+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-09T15:41:36.441680+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-09T21:42:01.632179+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents Sharpe<0 (winner: -2.32, loser: -2.33)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "net_expectancy_pct": -0.3656,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "net_expectancy_pct": -0.5404,
+        "sharpe": -2.318
+      }
+    },
+    "applied": "min_confidence raised to 0.70, sl tightened",
+    "bandit_actions": [],
+    "timestamp": "2026-06-10T00:36:20.413814+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 30,
+        "wins": 10,
+        "losses": 20,
+        "win_rate": 33.3,
+        "total_pnl": -1.6972,
+        "avg_pnl": -0.0566,
+        "avg_pnl_pct": -0.366,
+        "net_expectancy_pct": -0.3656,
+        "sharpe": -2.335
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "net_expectancy_pct": -0.5404,
+        "sharpe": -2.318
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-10T01:24:10.771870+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 34,
+        "wins": 12,
+        "losses": 22,
+        "win_rate": 35.3,
+        "total_pnl": -1.605,
+        "avg_pnl": -0.0472,
+        "avg_pnl_pct": -0.31,
+        "net_expectancy_pct": -0.3097,
+        "sharpe": -2.008
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "net_expectancy_pct": -0.5404,
+        "sharpe": -2.318
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-10T14:03:32.141709+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 37,
+        "wins": 14,
+        "losses": 23,
+        "win_rate": 37.8,
+        "total_pnl": -1.5247,
+        "avg_pnl": -0.0412,
+        "avg_pnl_pct": -0.274,
+        "net_expectancy_pct": -0.2741,
+        "sharpe": -1.771
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "net_expectancy_pct": -0.5404,
+        "sharpe": -2.318
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-11T14:04:01.172006+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 41,
+        "wins": 14,
+        "losses": 27,
+        "win_rate": 34.1,
+        "total_pnl": -2.1009,
+        "avg_pnl": -0.0512,
+        "avg_pnl_pct": -0.319,
+        "net_expectancy_pct": -0.3186,
+        "sharpe": -2.214
+      },
+      "ReversalSniper": {
+        "trades": 8,
+        "wins": 2,
+        "losses": 6,
+        "win_rate": 25.0,
+        "total_pnl": -0.6133,
+        "avg_pnl": -0.0767,
+        "avg_pnl_pct": -0.54,
+        "net_expectancy_pct": -0.5404,
+        "sharpe": -2.318
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-12T14:04:10.910038+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 46,
+        "wins": 17,
+        "losses": 29,
+        "win_rate": 37.0,
+        "total_pnl": -1.9325,
+        "avg_pnl": -0.042,
+        "avg_pnl_pct": -0.265,
+        "net_expectancy_pct": -0.2653,
+        "sharpe": -1.845
+      },
+      "ReversalSniper": {
+        "trades": 9,
+        "wins": 2,
+        "losses": 7,
+        "win_rate": 22.2,
+        "total_pnl": -0.6725,
+        "avg_pnl": -0.0747,
+        "avg_pnl_pct": -0.514,
+        "net_expectancy_pct": -0.5138,
+        "sharpe": -2.461
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-13T14:20:00.119021+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 49,
+        "wins": 18,
+        "losses": 31,
+        "win_rate": 36.7,
+        "total_pnl": -2.1086,
+        "avg_pnl": -0.043,
+        "avg_pnl_pct": -0.268,
+        "net_expectancy_pct": -0.2676,
+        "sharpe": -1.909
+      },
+      "ReversalSniper": {
+        "trades": 10,
+        "wins": 2,
+        "losses": 8,
+        "win_rate": 20.0,
+        "total_pnl": -0.6817,
+        "avg_pnl": -0.0682,
+        "avg_pnl_pct": -0.467,
+        "net_expectancy_pct": -0.4671,
+        "sharpe": -2.42
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-14T14:41:24.429663+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 54,
+        "wins": 21,
+        "losses": 33,
+        "win_rate": 38.9,
+        "total_pnl": -1.6344,
+        "avg_pnl": -0.0303,
+        "avg_pnl_pct": -0.198,
+        "net_expectancy_pct": -0.1978,
+        "sharpe": -1.355
+      },
+      "ReversalSniper": {
+        "trades": 13,
+        "wins": 2,
+        "losses": 11,
+        "win_rate": 15.4,
+        "total_pnl": -1.1467,
+        "avg_pnl": -0.0882,
+        "avg_pnl_pct": -0.542,
+        "net_expectancy_pct": -0.5425,
+        "sharpe": -3.268
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-15T14:41:41.533090+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 60,
+        "wins": 26,
+        "losses": 34,
+        "win_rate": 43.3,
+        "total_pnl": -0.5611,
+        "avg_pnl": -0.0094,
+        "avg_pnl_pct": -0.087,
+        "net_expectancy_pct": -0.0873,
+        "sharpe": -0.551
+      },
+      "ReversalSniper": {
+        "trades": 16,
+        "wins": 5,
+        "losses": 11,
+        "win_rate": 31.2,
+        "total_pnl": -0.8005,
+        "avg_pnl": -0.05,
+        "avg_pnl_pct": -0.331,
+        "net_expectancy_pct": -0.3308,
+        "sharpe": -1.892
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-16T14:41:43.845801+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 63,
+        "wins": 27,
+        "losses": 36,
+        "win_rate": 42.9,
+        "total_pnl": -0.6736,
+        "avg_pnl": -0.0107,
+        "avg_pnl_pct": -0.092,
+        "net_expectancy_pct": -0.0921,
+        "sharpe": -0.592
+      },
+      "ReversalSniper": {
+        "trades": 17,
+        "wins": 6,
+        "losses": 11,
+        "win_rate": 35.3,
+        "total_pnl": -0.6515,
+        "avg_pnl": -0.0383,
+        "avg_pnl_pct": -0.267,
+        "net_expectancy_pct": -0.2666,
+        "sharpe": -1.516
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v1",
+        "edge_pct": 100.0
+      },
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-17T14:41:50.372687+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 69,
+        "wins": 31,
+        "losses": 38,
+        "win_rate": 44.9,
+        "total_pnl": -0.0956,
+        "avg_pnl": -0.0014,
+        "avg_pnl_pct": -0.041,
+        "net_expectancy_pct": -0.0414,
+        "sharpe": -0.266
+      },
+      "ReversalSniper": {
+        "trades": 19,
+        "wins": 7,
+        "losses": 12,
+        "win_rate": 36.8,
+        "total_pnl": -0.398,
+        "avg_pnl": -0.0209,
+        "avg_pnl_pct": -0.172,
+        "net_expectancy_pct": -0.1721,
+        "sharpe": -0.934
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-18T14:42:15.195284+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 73,
+        "wins": 32,
+        "losses": 41,
+        "win_rate": 43.8,
+        "total_pnl": -0.3758,
+        "avg_pnl": -0.0051,
+        "avg_pnl_pct": -0.058,
+        "net_expectancy_pct": -0.0582,
+        "sharpe": -0.369
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-19T14:42:35.891192+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 78,
+        "wins": 34,
+        "losses": 44,
+        "win_rate": 43.6,
+        "total_pnl": -0.3094,
+        "avg_pnl": -0.004,
+        "avg_pnl_pct": -0.05,
+        "net_expectancy_pct": -0.05,
+        "sharpe": -0.314
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-20T14:55:18.200575+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 83,
+        "wins": 34,
+        "losses": 49,
+        "win_rate": 41.0,
+        "total_pnl": -1.1374,
+        "avg_pnl": -0.0137,
+        "avg_pnl_pct": -0.097,
+        "net_expectancy_pct": -0.0975,
+        "sharpe": -0.616
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-21T15:09:24.204838+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 87,
+        "wins": 35,
+        "losses": 52,
+        "win_rate": 40.2,
+        "total_pnl": -1.5241,
+        "avg_pnl": -0.0175,
+        "avg_pnl_pct": -0.116,
+        "net_expectancy_pct": -0.116,
+        "sharpe": -0.731
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v2",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-22T15:09:32.609327+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 87,
+        "wins": 35,
+        "losses": 52,
+        "win_rate": 40.2,
+        "total_pnl": -1.5241,
+        "avg_pnl": -0.0175,
+        "avg_pnl_pct": -0.116,
+        "net_expectancy_pct": -0.116,
+        "sharpe": -0.731
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-24T17:42:17.086934+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 89,
+        "wins": 36,
+        "losses": 53,
+        "win_rate": 40.4,
+        "total_pnl": -1.4054,
+        "avg_pnl": -0.0158,
+        "avg_pnl_pct": -0.107,
+        "net_expectancy_pct": -0.1068,
+        "sharpe": -0.678
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-25T17:42:38.491343+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 89,
+        "wins": 36,
+        "losses": 53,
+        "win_rate": 40.4,
+        "total_pnl": -1.4054,
+        "avg_pnl": -0.0158,
+        "avg_pnl_pct": -0.107,
+        "net_expectancy_pct": -0.1068,
+        "sharpe": -0.678
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-26T16:13:28.099473+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 103,
+        "wins": 41,
+        "losses": 62,
+        "win_rate": 39.8,
+        "total_pnl": -2.4553,
+        "avg_pnl": -0.0238,
+        "avg_pnl_pct": -0.141,
+        "net_expectancy_pct": -0.1411,
+        "sharpe": -0.911
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-27T16:13:38.804817+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 116,
+        "wins": 44,
+        "losses": 72,
+        "win_rate": 37.9,
+        "total_pnl": -3.1398,
+        "avg_pnl": -0.0271,
+        "avg_pnl_pct": -0.151,
+        "net_expectancy_pct": -0.1511,
+        "sharpe": -1.011
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-28T16:14:04.320925+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 131,
+        "wins": 47,
+        "losses": 84,
+        "win_rate": 35.9,
+        "total_pnl": -5.9439,
+        "avg_pnl": -0.0454,
+        "avg_pnl_pct": -0.226,
+        "net_expectancy_pct": -0.2259,
+        "sharpe": -1.508
+      },
+      "ReversalSniper": {
+        "trades": 20,
+        "wins": 7,
+        "losses": 13,
+        "win_rate": 35.0,
+        "total_pnl": -0.4516,
+        "avg_pnl": -0.0226,
+        "avg_pnl_pct": -0.177,
+        "net_expectancy_pct": -0.177,
+        "sharpe": -1.011
+      }
+    },
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "ReversalSniper",
+        "variant": "ReversalSniper_v3",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-06-29T16:14:22.574271+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 144,
+        "wins": 51,
+        "losses": 93,
+        "win_rate": 35.4,
+        "total_pnl": -6.8011,
+        "avg_pnl": -0.0472,
+        "avg_pnl_pct": -0.229,
+        "net_expectancy_pct": -0.2293,
+        "sharpe": -1.529
+      },
+      "ReversalSniper": {
+        "trades": 24,
+        "wins": 7,
+        "losses": 17,
+        "win_rate": 29.2,
+        "total_pnl": -0.945,
+        "avg_pnl": -0.0394,
+        "avg_pnl_pct": -0.243,
+        "net_expectancy_pct": -0.2432,
+        "sharpe": -1.562
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-06-30T16:14:46.980743+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 155,
+        "wins": 57,
+        "losses": 98,
+        "win_rate": 36.8,
+        "total_pnl": -6.1727,
+        "avg_pnl": -0.0398,
+        "avg_pnl_pct": -0.196,
+        "net_expectancy_pct": -0.196,
+        "sharpe": -1.264
+      },
+      "ReversalSniper": {
+        "trades": 24,
+        "wins": 7,
+        "losses": 17,
+        "win_rate": 29.2,
+        "total_pnl": -0.945,
+        "avg_pnl": -0.0394,
+        "avg_pnl_pct": -0.243,
+        "net_expectancy_pct": -0.2432,
+        "sharpe": -1.562
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-07-01T16:15:10.111695+00:00"
+  },
+  {
+    "event": "skipped",
+    "reason": "not enough eligible agents (need 25+ trades each)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 174,
+        "wins": 68,
+        "losses": 106,
+        "win_rate": 39.1,
+        "total_pnl": -4.4462,
+        "avg_pnl": -0.0256,
+        "avg_pnl_pct": -0.136,
+        "net_expectancy_pct": -0.1362,
+        "sharpe": -0.854
+      },
+      "ReversalSniper": {
+        "trades": 24,
+        "wins": 7,
+        "losses": 17,
+        "win_rate": 29.2,
+        "total_pnl": -0.945,
+        "avg_pnl": -0.0394,
+        "avg_pnl_pct": -0.243,
+        "net_expectancy_pct": -0.2432,
+        "sharpe": -1.562
+      }
+    },
+    "bandit_actions": [],
+    "timestamp": "2026-07-02T16:15:11.412126+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.137%, loser: -0.198%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 185,
+        "wins": 75,
+        "losses": 110,
+        "win_rate": 40.5,
+        "total_pnl": -4.8485,
+        "avg_pnl": -0.0262,
+        "avg_pnl_pct": -0.137,
+        "net_expectancy_pct": -0.1372,
+        "sharpe": -0.881
+      },
+      "ReversalSniper": {
+        "trades": 25,
+        "wins": 8,
+        "losses": 17,
+        "win_rate": 32.0,
+        "total_pnl": -0.7203,
+        "avg_pnl": -0.0288,
+        "avg_pnl_pct": -0.197,
+        "net_expectancy_pct": -0.1975,
+        "sharpe": -1.266
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-03T16:15:33.989216+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.137%, loser: -0.198%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 185,
+        "wins": 75,
+        "losses": 110,
+        "win_rate": 40.5,
+        "total_pnl": -4.8485,
+        "avg_pnl": -0.0262,
+        "avg_pnl_pct": -0.137,
+        "net_expectancy_pct": -0.1372,
+        "sharpe": -0.881
+      },
+      "ReversalSniper": {
+        "trades": 25,
+        "wins": 8,
+        "losses": 17,
+        "win_rate": 32.0,
+        "total_pnl": -0.7203,
+        "avg_pnl": -0.0288,
+        "avg_pnl_pct": -0.197,
+        "net_expectancy_pct": -0.1975,
+        "sharpe": -1.266
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-04T16:24:00.397479+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.132%, loser: -0.234%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 187,
+        "wins": 77,
+        "losses": 110,
+        "win_rate": 41.2,
+        "total_pnl": -4.6951,
+        "avg_pnl": -0.0251,
+        "avg_pnl_pct": -0.132,
+        "net_expectancy_pct": -0.1324,
+        "sharpe": -0.854
+      },
+      "ReversalSniper": {
+        "trades": 26,
+        "wins": 8,
+        "losses": 18,
+        "win_rate": 30.8,
+        "total_pnl": -1.0063,
+        "avg_pnl": -0.0387,
+        "avg_pnl_pct": -0.234,
+        "net_expectancy_pct": -0.234,
+        "sharpe": -1.517
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-05T16:24:08.098681+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.175%, loser: -0.234%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 204,
+        "wins": 83,
+        "losses": 121,
+        "win_rate": 40.7,
+        "total_pnl": -7.1924,
+        "avg_pnl": -0.0353,
+        "avg_pnl_pct": -0.175,
+        "net_expectancy_pct": -0.1747,
+        "sharpe": -1.119
+      },
+      "ReversalSniper": {
+        "trades": 26,
+        "wins": 8,
+        "losses": 18,
+        "win_rate": 30.8,
+        "total_pnl": -1.0063,
+        "avg_pnl": -0.0387,
+        "avg_pnl_pct": -0.234,
+        "net_expectancy_pct": -0.234,
+        "sharpe": -1.517
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [
+      {
+        "action": "promotion",
+        "principal": "MomentumHunter",
+        "variant": "MomentumHunter_v1",
+        "edge_pct": 100.0
+      }
+    ],
+    "timestamp": "2026-07-06T16:24:11.914241+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.187%, loser: -0.205%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 209,
+        "wins": 84,
+        "losses": 125,
+        "win_rate": 40.2,
+        "total_pnl": -8.0843,
+        "avg_pnl": -0.0387,
+        "avg_pnl_pct": -0.187,
+        "net_expectancy_pct": -0.1874,
+        "sharpe": -1.201
+      },
+      "ReversalSniper": {
+        "trades": 27,
+        "wins": 9,
+        "losses": 18,
+        "win_rate": 33.3,
+        "total_pnl": -0.8696,
+        "avg_pnl": -0.0322,
+        "avg_pnl_pct": -0.205,
+        "net_expectancy_pct": -0.2048,
+        "sharpe": -1.354
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-07T16:24:17.836012+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.158%, loser: -0.205%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 221,
+        "wins": 91,
+        "losses": 130,
+        "win_rate": 41.2,
+        "total_pnl": -7.0657,
+        "avg_pnl": -0.032,
+        "avg_pnl_pct": -0.158,
+        "net_expectancy_pct": -0.1582,
+        "sharpe": -0.986
+      },
+      "ReversalSniper": {
+        "trades": 27,
+        "wins": 9,
+        "losses": 18,
+        "win_rate": 33.3,
+        "total_pnl": -0.8696,
+        "avg_pnl": -0.0322,
+        "avg_pnl_pct": -0.205,
+        "net_expectancy_pct": -0.2048,
+        "sharpe": -1.354
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-08T16:24:18.288562+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.120%, loser: -0.174%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 225,
+        "wins": 91,
+        "losses": 134,
+        "win_rate": 40.4,
+        "total_pnl": -8.127,
+        "avg_pnl": -0.0361,
+        "avg_pnl_pct": -0.174,
+        "net_expectancy_pct": -0.1744,
+        "sharpe": -1.087
+      },
+      "ReversalSniper": {
+        "trades": 31,
+        "wins": 12,
+        "losses": 19,
+        "win_rate": 38.7,
+        "total_pnl": -0.4724,
+        "avg_pnl": -0.0152,
+        "avg_pnl_pct": -0.12,
+        "net_expectancy_pct": -0.1198,
+        "sharpe": -0.814
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-09T16:24:33.501096+00:00"
+  },
+  {
+    "event": "defensive_mode",
+    "reason": "both agents net expectancy<0 (winner: -0.120%, loser: -0.180%)",
+    "stats": {
+      "MomentumHunter": {
+        "trades": 227,
+        "wins": 91,
+        "losses": 136,
+        "win_rate": 40.1,
+        "total_pnl": -8.4925,
+        "avg_pnl": -0.0374,
+        "avg_pnl_pct": -0.18,
+        "net_expectancy_pct": -0.1799,
+        "sharpe": -1.124
+      },
+      "ReversalSniper": {
+        "trades": 31,
+        "wins": 12,
+        "losses": 19,
+        "win_rate": 38.7,
+        "total_pnl": -0.4724,
+        "avg_pnl": -0.0152,
+        "avg_pnl_pct": -0.12,
+        "net_expectancy_pct": -0.1198,
+        "sharpe": -0.814
+      }
+    },
+    "applied": "min_confidence raised to 0.65 (sl_pct NO se toca \u2014 reflection/ATR mandan)",
+    "bandit_actions": [],
+    "timestamp": "2026-07-10T16:24:53.116777+00:00"
   }
 ]

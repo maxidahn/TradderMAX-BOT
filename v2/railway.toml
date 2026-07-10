@@ -1,0 +1,9 @@
+# Config de Railway para el servicio v2 (modo local + dashboard)
+# Poné el "Root Directory" del servicio en:  v2
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python run_local.py"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

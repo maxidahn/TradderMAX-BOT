@@ -1,0 +1,7 @@
+flask>=3.0
+python-binance>=1.0.19
+requests>=2.31
+python-dotenv>=1.0
+gunicorn>=21.2
+pandas>=2.0
+numpy>=1.24

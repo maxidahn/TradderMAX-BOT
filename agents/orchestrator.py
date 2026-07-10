@@ -99,7 +99,8 @@ class AgentsOrchestrator:
 
         # ── Agents — ahora con OnlineLearner + ContagionBus inyectados ──────
         ml_weight = getattr(self.ac, "online_ml_weight", 0.25)
-        ml_min_samples = getattr(self.ac, "online_ml_min_samples", 8)
+        ml_min_samples = getattr(self.ac, "online_ml_min_samples", 30)
+        ml_min_accuracy = getattr(self.ac, "online_ml_min_accuracy", 0.50)
         self.momentum = MomentumAgent(
             params=self.ac.momentum_initial,
             perpetuals_data=self.perp_data,
@@ -111,6 +112,7 @@ class AgentsOrchestrator:
         self.momentum.contagion_bus  = self.contagion
         self.momentum.online_ml_weight = ml_weight
         self.momentum.online_ml_min_samples = ml_min_samples
+        self.momentum.online_ml_min_accuracy = ml_min_accuracy
 
         self.reversion = ReversionAgent(
             params=self.ac.reversion_initial,
@@ -121,6 +123,7 @@ class AgentsOrchestrator:
         self.reversion.contagion_bus  = self.contagion
         self.reversion.online_ml_weight = ml_weight
         self.reversion.online_ml_min_samples = ml_min_samples
+        self.reversion.online_ml_min_accuracy = ml_min_accuracy
 
         self.agents: List[BaseAgent] = [self.momentum, self.reversion]
 
@@ -146,6 +149,9 @@ class AgentsOrchestrator:
 
         # ── Map open position symbol → replay entry id (para attach_outcome) ─
         self._open_entry_ids: Dict[str, str] = {}
+
+        # ── HTF trend filter cache: symbol → (trend_dir, epoch_ts) ───────────
+        self._htf_cache: Dict[str, tuple] = {}
 
         # ── Last decisions (para dashboard) ──────────────────────────────────
         self.last_decisions: Dict[str, dict] = {}   # symbol → {momentum: {...}, reversion: {...}, resolved: {...}}
@@ -334,6 +340,49 @@ class AgentsOrchestrator:
 
     # ─── Tick: ask agents, resolve, execute ──────────────────────────────────
 
+    def _htf_trend(self, symbol: str) -> str:
+        """Tendencia de fondo en temporalidad superior (default 1h).
+
+        Devuelve 'up' / 'down' / 'flat' según la PENDIENTE de la EMA50 en 1h.
+        Cacheada htf_refresh_seconds para no saturar la API de Binance.
+        Ante cualquier error o duda devuelve 'flat' (no filtra → fail-open).
+        """
+        if not getattr(self.fc, "htf_trend_filter", False):
+            return "flat"
+
+        now = time.time()
+        cached = self._htf_cache.get(symbol)
+        if cached and (now - cached[1]) < getattr(self.fc, "htf_refresh_seconds", 900):
+            return cached[0]
+
+        trend = "flat"
+        try:
+            interval = getattr(self.fc, "htf_interval", "1h")
+            period   = getattr(self.fc, "htf_ema_period", 50)
+            lookback = getattr(self.fc, "htf_slope_lookback", 6)
+            min_pct  = getattr(self.fc, "htf_slope_min_pct", 0.10)
+
+            candles = self.futures_trader.get_candles(
+                symbol, interval=interval, limit=period + lookback + 20
+            )
+            if candles is not None and not candles.empty and len(candles) > period + lookback + 1:
+                close = candles["close"].astype(float)
+                ema = close.ewm(span=period, adjust=False).mean()
+                cur  = ema.iloc[-2]               # última vela cerrada
+                prev = ema.iloc[-2 - lookback]
+                if prev:
+                    slope_pct = (cur - prev) / prev * 100.0
+                    if slope_pct > min_pct:
+                        trend = "up"
+                    elif slope_pct < -min_pct:
+                        trend = "down"
+        except Exception as e:
+            logger.debug(f"_htf_trend {symbol}: {e}")
+            return "flat"
+
+        self._htf_cache[symbol] = (trend, now)
+        return trend
+
     def _tick(self):
         for pair in self.fc.pairs:
             if not pair.enabled:
@@ -368,6 +417,17 @@ class AgentsOrchestrator:
 
                 if not resolved or resolved["action"] == "FLAT":
                     continue
+
+                # ── HTF trend filter: no operar contra la tendencia de fondo ─
+                if getattr(self.fc, "htf_trend_filter", False):
+                    htf = self._htf_trend(pair.symbol)
+                    act = resolved["action"]
+                    if (act == "SHORT" and htf == "up") or (act == "LONG" and htf == "down"):
+                        self._log("INFO",
+                                  f"{pair.symbol}: {act} vetado por filtro de tendencia "
+                                  f"(fondo {self.fc.htf_interval}={htf})")
+                        self.last_decisions[pair.symbol]["resolved"]["vetoed_by"] = f"htf_{htf}"
+                        continue
 
                 # ── Pre-flight risk checks before executing ─────────────────
                 if not self._risk_checks_pass(pair, resolved):
@@ -465,6 +525,10 @@ class AgentsOrchestrator:
         symbol = pair.symbol
         action = resolved["action"]
 
+        # FIX 2026-06-09: rollover diario ANTES del chequeo — si no, un kill
+        # switch disparado nunca se rearma al cambiar el día (bug H6 auditoría)
+        self.futures_trader.roll_daily_pnl()
+
         # Kill switch (already in FuturesTrader.open_position, but log here too)
         equity = self.futures_trader.paper_equity if self.fc.paper_trade else self.futures_trader.get_futures_balance_usdt()
         if self.futures_trader.realized_pnl_today <= -self.fc.max_daily_loss_pct / 100.0 * equity:
@@ -507,10 +571,14 @@ class AgentsOrchestrator:
         if action not in ("LONG", "SHORT"):
             return
 
-        # Sizing: notional configurado del par, ajustado por confidence
-        base_notional = pair.notional_usdt
-        conf_mult = 0.6 + 0.4 * resolved["confidence"]    # 0.6x..1.0x según confidence
-        notional = max(pair.min_notional, min(pair.max_notional, base_notional * conf_mult))
+        # Sizing: notional FIJO del par (FIX 2026-06-22).
+        # Antes se escalaba por confianza (0.6x..1.0x), pero sobre 116 trades
+        # reales la correlación entre confianza y resultado (pnl_pct) es -0.008:
+        # CERO poder predictivo. Escalar el tamaño por ella solo agregaba
+        # varianza sin retorno esperado (de hecho agrandaba los trades de
+        # "alta confianza" que NO rendían mejor). La confianza se conserva solo
+        # como telemetría / para gating, no para dimensionar.
+        notional = max(pair.min_notional, min(pair.max_notional, pair.notional_usdt))
 
         # Leverage del par + safety phase cap (1x durante primeras 72h live)
         leverage = self.effective_leverage(pair.leverage)

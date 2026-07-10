@@ -90,6 +90,8 @@ def save_open_positions(positions: dict):
             "order_id":    pos.order_id,
             "entry_fee":   pos.entry_fee,
             "peak_price":  pos.peak_price,  # Trailing stop anchor — survives restarts
+            "sl_pct":      getattr(pos, "sl_pct", 0.0),  # Stops por ATR — sobreviven restarts
+            "tp_pct":      getattr(pos, "tp_pct", 0.0),
         }
         for sym, pos in positions.items()
     }

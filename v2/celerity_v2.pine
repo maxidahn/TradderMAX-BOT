@@ -1,0 +1,90 @@
+//@version=5
+// ─────────────────────────────────────────────────────────────────────────────
+//  CELERITY v2 — Estrategia de TENDENCIA (long + short) para perpetuos
+// ─────────────────────────────────────────────────────────────────────────────
+//  Filosofía (ver REPORTE_CELERITY_2026-06-29.md):
+//    - Timeframe ALTO (poné el gráfico en 4h o 1D). Pocas operaciones de calidad.
+//    - Operar A FAVOR de la tendencia de fondo (EMA200). Nada de contra-tendencia.
+//    - Dejar correr al ganador: salida por ruptura de EMA50 o trailing Chandelier.
+//    - El stop sale del ATR (volatilidad real), no de un número fijo.
+//
+//  Cómo manda señales al bot:
+//    Cada entrada/salida adjunta un alert_message con un JSON. Creás UNA alerta
+//    sobre esta estrategia con:
+//       Condición: Celerity v2  →  "Order fills only"
+//       Mensaje:   {{strategy.order.alert_message}}
+//       Webhook:   https://TU-BOT.up.railway.app/webhook/tradingview
+//    El bot valida el "secret" y ejecuta en Binance Futures (paper o live).
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy("Celerity v2 — Trend (long+short)", overlay=true,
+     default_qty_type=strategy.percent_of_equity, default_qty_value=100,
+     commission_type=strategy.commission.percent, commission_value=0.04,
+     slippage=2, pyramiding=0, calc_on_every_tick=false)
+
+// ── Inputs ───────────────────────────────────────────────────────────────────
+emaTrendLen = input.int(200, "EMA tendencia de fondo (régimen)")
+emaFastLen  = input.int(20,  "EMA rápida")
+emaSlowLen  = input.int(50,  "EMA lenta (salida)")
+donchianLen = input.int(20,  "Donchian (ruptura)")
+atrLen      = input.int(14,  "ATR")
+chandMult   = input.float(3.0, "Multiplicador Chandelier (trailing)")
+secret      = input.string("CAMBIA_ESTE_SECRETO", "Secreto del webhook")
+
+// ── Cálculos ─────────────────────────────────────────────────────────────────
+emaT = ta.ema(close, emaTrendLen)
+emaF = ta.ema(close, emaFastLen)
+emaS = ta.ema(close, emaSlowLen)
+atr  = ta.atr(atrLen)
+hiBreak = ta.highest(high, donchianLen)[1]   // máximo previo (sin la vela actual)
+loBreak = ta.lowest(low,  donchianLen)[1]
+
+// Trailing Chandelier
+var float longTrail  = na
+var float shortTrail = na
+
+// ── Condiciones ──────────────────────────────────────────────────────────────
+regimeUp   = close > emaT
+regimeDown = close < emaT
+longSetup  = regimeUp   and emaF > emaS and close > hiBreak
+shortSetup = regimeDown and emaF < emaS and close < loBreak
+
+// SL en % desde el precio (distancia del Chandelier inicial). El bot lo usa para
+// dimensionar la posición arriesgando un % fijo del equity.
+slPctLong  = (chandMult * atr) / close * 100
+slPctShort = (chandMult * atr) / close * 100
+
+// ── JSON helper ──────────────────────────────────────────────────────────────
+msgLong  = '{"secret":"'  + secret + '","action":"LONG","symbol":"{{ticker}}","price":'  + str.tostring(close) + ',"sl_pct":' + str.tostring(slPctLong,  "#.##") + ',"strategy":"celerity_v2"}'
+msgShort = '{"secret":"'  + secret + '","action":"SHORT","symbol":"{{ticker}}","price":' + str.tostring(close) + ',"sl_pct":' + str.tostring(slPctShort, "#.##") + ',"strategy":"celerity_v2"}'
+msgClose = '{"secret":"'  + secret + '","action":"CLOSE","symbol":"{{ticker}}","price":' + str.tostring(close) + ',"strategy":"celerity_v2"}'
+
+// ── Entradas ─────────────────────────────────────────────────────────────────
+if longSetup and strategy.position_size <= 0
+    strategy.entry("L", strategy.long, alert_message=msgLong)
+    longTrail := close - chandMult * atr
+
+if shortSetup and strategy.position_size >= 0
+    strategy.entry("S", strategy.short, alert_message=msgShort)
+    shortTrail := close + chandMult * atr
+
+// ── Gestión de trailing + salidas ────────────────────────────────────────────
+if strategy.position_size > 0
+    longTrail := math.max(nz(longTrail, close - chandMult*atr), close - chandMult*atr)
+    exitLong = close < emaS or close < longTrail
+    if exitLong
+        strategy.close("L", alert_message=msgClose)
+        longTrail := na
+
+if strategy.position_size < 0
+    shortTrail := math.min(nz(shortTrail, close + chandMult*atr), close + chandMult*atr)
+    exitShort = close > emaS or close > shortTrail
+    if exitShort
+        strategy.close("S", alert_message=msgClose)
+        shortTrail := na
+
+// ── Visual ───────────────────────────────────────────────────────────────────
+plot(emaT, "EMA200", color=color.orange, linewidth=2)
+plot(emaF, "EMA20",  color=color.aqua)
+plot(emaS, "EMA50",  color=color.fuchsia)
+bgcolor(regimeUp ? color.new(color.green, 92) : color.new(color.red, 92))

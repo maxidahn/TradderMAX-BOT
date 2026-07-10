@@ -52,7 +52,9 @@ class TransactionCosts:
     # Binance fees (maker/taker)
     fee_rate: float = 0.001        # 0.1% per trade (default Binance spot)
     fee_rate_bnb: float = 0.00075  # 0.075% if paying fees with BNB
-    use_bnb_fee: bool = False      # Whether user pays fees in BNB
+    # Activable por env: USE_BNB_FEE=true (requiere saldo BNB + opción
+    # "Pagar fees con BNB" activada en Binance → fee 0.1% → 0.075%, -25%)
+    use_bnb_fee: bool = os.getenv("USE_BNB_FEE", "false").lower() in ("true", "1", "yes")
 
     # Slippage estimation
     slippage_base_pct: float = 0.05   # 0.05% base slippage for market orders
@@ -111,6 +113,25 @@ class StrategyConfig:
     # Candle timeframe
     timeframe: str = "5m"  # 5-minute candles
     lookback_candles: int = 150  # Aumentado: da al ML suficientes muestras para entrenar
+
+    # ── Filtro anti-chop (ADX) ───────────────────────────────────────────────
+    # Solo permite ENTRADAS (BUY) cuando hay tendencia real. ADX < adx_min = mercado
+    # lateral/chop → no operar. Diagnóstico jun-2026: las 21 pérdidas por stop-loss
+    # eran entradas en mercado sin dirección que revertían de inmediato.
+    # Solo degrada BUY→HOLD; nunca bloquea salidas.
+    anti_chop_enabled: bool = True
+    adx_period: int = 14
+    adx_min: float = 20.0          # ADX mínimo para permitir una entrada
+
+    # ── Gate de coste / volatilidad ──────────────────────────────────────────
+    # No entrar si la volatilidad reciente (ATR%) es tan baja que el movimiento
+    # esperado no supera claramente el coste ida-vuelta (fees + slippage).
+    # Convierte el "micro-trading" en algo seguro: solo se opera cuando el edge
+    # esperado paga las comisiones. Solo degrada BUY→HOLD.
+    cost_gate_enabled: bool = True
+    atr_period: int = 14
+    # El ATR% debe ser ≥ cost_gate_atr_mult × coste_ida_vuelta% para entrar.
+    cost_gate_atr_mult: float = 1.5
 
 
 @dataclass
@@ -176,6 +197,22 @@ class FuturesConfig:
     max_funding_rate_long: float = 0.05         # %
     funding_guard_enabled: bool = True
 
+    # ── Higher-timeframe trend filter (2026-06-22) ───────────────────────────
+    # Evita operar contra la tendencia de fondo: bloquea SHORT cuando la
+    # tendencia 1h es alcista y LONG cuando es bajista. Fue la causa #1 de
+    # pérdidas en la racha 19-22 jun (shortear el rally de SOL +9%).
+    # Validado sobre 113 trades reales: PnL pasa de -0.68 a +0.6/+1.3 en TODAS
+    # las combinaciones de lookback/umbral probadas (robusto, no sobreajustado).
+    # La tendencia se mide por la PENDIENTE de la EMA50 en 1h, no por la
+    # posición del precio (esa versión no servía: los shorts entraban en
+    # pullbacks justo debajo de la EMA50 de 5m mientras el fondo seguía alcista).
+    htf_trend_filter: bool = True               # Master switch (poné False para revertir)
+    htf_interval: str = "1h"                    # Temporalidad de la tendencia de fondo
+    htf_ema_period: int = 50                    # EMA de referencia sobre velas 1h
+    htf_slope_lookback: int = 6                 # Barras 1h para medir la pendiente (~6h)
+    htf_slope_min_pct: float = 0.10             # % mínimo de pendiente para declarar tendencia
+    htf_refresh_seconds: int = 900              # Cachea las velas 1h (refresca cada 15 min)
+
     # ── Live capital configuration (when paper_trade=False) ──────────────────
     # Si todavía no transferiste USDT al wallet Futures, esto solo se usa para
     # validación de tamaños mínimos. La equity real viene de Binance.
@@ -196,10 +233,25 @@ class FuturesConfig:
 
     # Pairs traded by the agents module — sizing pensado para $100 de capital
     # Notional típico $15–25 → con 4 posiciones max usa $60–100 del capital
+    # FIX 2026-06-09: min_notional subido a 20 — Binance Futures rechaza
+    # órdenes < $20 de notional. El sizing por confianza (0.6-1.0×) bajaba
+    # el monto debajo del mínimo real → "open_position: notional $14.73 < min $20".
+    # El orchestrator clampea a min_notional, así que con 20 siempre pasa.
+    #
+    # FIX 2026-06-22 (diversificación): hasta hoy el bot operaba SOLO SOL — los
+    # 116 trades fueron todos SOLUSDT. BTC/ETH generaban señales pero NUNCA
+    # abrían: BTC ("quantity rounds to 0", su lote mínimo 0.001 BTC ≈ $76 supera
+    # su propio max_notional) y ETH ("notional < min", el redondeo hacia abajo
+    # lo tiraba bajo el mínimo). Se saca BTC (intradeable con cuenta ~$500) y se
+    # agregan alts baratas que ya tienen modelo ML entrenado (LINK/AVAX/XRP)
+    # para diversificar de verdad. El sizing en futures_trader.open_position
+    # ahora redondea HACIA ARRIBA al lote viable (ver fix allí).
     pairs: List[FuturesPair] = field(default_factory=lambda: [
-        FuturesPair(symbol="SOLUSDT", name="Solana",  leverage=1, notional_usdt=20.0, min_notional=10.0, max_notional=40.0),
-        FuturesPair(symbol="BTCUSDT", name="Bitcoin", leverage=1, notional_usdt=25.0, min_notional=15.0, max_notional=50.0),
-        FuturesPair(symbol="ETHUSDT", name="Ethereum",leverage=1, notional_usdt=20.0, min_notional=10.0, max_notional=40.0),
+        FuturesPair(symbol="SOLUSDT",  name="Solana",   leverage=1, notional_usdt=25.0, min_notional=20.0, max_notional=40.0),
+        FuturesPair(symbol="ETHUSDT",  name="Ethereum", leverage=1, notional_usdt=25.0, min_notional=20.0, max_notional=40.0),
+        FuturesPair(symbol="LINKUSDT", name="Chainlink", leverage=1, notional_usdt=25.0, min_notional=20.0, max_notional=40.0),
+        FuturesPair(symbol="AVAXUSDT", name="Avalanche", leverage=1, notional_usdt=25.0, min_notional=20.0, max_notional=40.0),
+        FuturesPair(symbol="XRPUSDT",  name="XRP",       leverage=1, notional_usdt=25.0, min_notional=20.0, max_notional=40.0),
     ])
 
 
@@ -230,31 +282,42 @@ class AgentParams:
 
 @dataclass
 class AgentsConfig:
-    """Configuration for the two-agent learning system (AGGRESSIVE LEARNING MODE)."""
-    # ── Tournament cadence — ULTRA agresivo (era 30 trades / 24h) ───────────
-    tournament_every_n_trades: int = 5         # Evoluciona casi en cada operación
-    tournament_every_hours: int = 6            # Y al menos cada 6h aunque haya pocos trades
+    """Configuration for the two-agent learning system.
 
-    # Winner threshold: ganador debe superar perdedor por X% en Sharpe-like
-    # Bajado de 30→15: sensible a edges chicos para iterar más rápido
-    tournament_min_edge_pct: float = 15.0
+    FIX 2026-06-09 (auditoría P2): el modo "ULTRA agresivo" (torneo cada 5
+    trades, elegibilidad con 3) optimizaba RUIDO — con n=3-8 la "ventaja" de
+    un agente sobre otro es azar (Douglas: el edge solo se ve en series de
+    ≥25 trades; Steenbarger: no optimizar sobre muestras chicas). Resultado
+    real en 5 semanas: 69 defensive_mode, 1 solo crossover. Volvemos a
+    cadencia con disciplina estadística.
+    """
+    # ── Tournament cadence — por series, no por trade ────────────────────────
+    tournament_every_n_trades: int = 25        # Evalúa por series de 25 (Douglas)
+    tournament_every_hours: int = 24           # Y al menos 1 vez al día
 
-    # Crossover: 70% del ganador (era 60) → el ganador domina más
+    # Winner threshold: ganador debe superar perdedor por X% en expectativa neta
+    tournament_min_edge_pct: float = 20.0
+
+    # Crossover: 70% del ganador
     crossover_winner_weight: float = 0.70
 
-    # Mutation: 15% de ruido (era 5%) → exploración más amplia del espacio
-    mutation_rate: float = 0.15
+    # Mutation: 10% de ruido (15% exploraba demasiado con tan pocos datos)
+    mutation_rate: float = 0.10
 
     # Min trades each agent must have before tournament considers them
-    min_trades_for_tournament: int = 3         # Era 5 → 3 (más sensible)
+    min_trades_for_tournament: int = 25        # Muestra mínima estadística
 
     # Adjudicator (Claude) — only fires on contradictory signals
     adjudicator_enabled: bool = True
 
     # ── Online ML por agente (#2) ────────────────────────────────────────────
+    # FIX 2026-06-09: con 8 samples el perceptrón era ANTI-predictivo
+    # (accuracy 30-37%, peor que moneda) y metía ruido en la confidence.
+    # Ahora exige 30 samples Y accuracy >50% (gate en base_agent) para opinar.
     online_ml_enabled: bool = True
-    online_ml_min_samples: int = 8             # Mín trades cerrados antes de usar score
+    online_ml_min_samples: int = 30            # Mín trades cerrados antes de usar score
     online_ml_weight: float = 0.25             # Peso del score ML en la confidence final
+    online_ml_min_accuracy: float = 0.50       # Accuracy mínima para que el score cuente
 
     # ── Reflection con Claude tras cada cierre (#3) ──────────────────────────
     reflection_enabled: bool = True

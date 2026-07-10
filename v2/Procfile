@@ -1,0 +1,6 @@
+# Modo LOCAL (estrategia interna + dashboard) — es el que estás usando.
+web: python run_local.py
+
+# Modo WEBHOOK (señales desde TradingView) — si algún día lo activás, usá esta línea
+# en vez de la de arriba:
+# web: gunicorn app_v2:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120

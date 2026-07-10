@@ -180,13 +180,20 @@ class BaseAgent(ABC):
         new_conf = base_confidence
 
         # ── Online ML boost ──────────────────────────────────────────────────
+        # FIX 2026-06-09 (auditoría P2): además del mínimo de samples, el
+        # modelo debe demostrar accuracy >50% para opinar. Un modelo peor que
+        # una moneda (como estaban: 30-37%) restaba señal en vez de sumarla.
         if self.online_learner and self.online_learner.n_samples >= self.online_ml_min_samples:
-            ml_score = self.online_learner.predict_score(features)   # [-1, +1]
-            self._last_ml_score = ml_score
-            ml_boost = ml_score * self.online_ml_weight
-            new_conf += ml_boost
-            if abs(ml_boost) >= 0.02:
-                details.append(f"ml{ml_boost:+.2f}")
+            min_acc = getattr(self, "online_ml_min_accuracy", 0.50)
+            if self.online_learner.accuracy() > min_acc:
+                ml_score = self.online_learner.predict_score(features)   # [-1, +1]
+                self._last_ml_score = ml_score
+                ml_boost = ml_score * self.online_ml_weight
+                new_conf += ml_boost
+                if abs(ml_boost) >= 0.02:
+                    details.append(f"ml{ml_boost:+.2f}")
+            else:
+                self._last_ml_score = 0.0
 
         # ── Cross-contagion boost ────────────────────────────────────────────
         if self.contagion_bus:

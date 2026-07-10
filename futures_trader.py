@@ -17,6 +17,7 @@ Importante:
 
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -276,10 +277,7 @@ class FuturesTrader:
                 return None
 
             # Reset daily PnL on new day
-            today = datetime.now(timezone.utc).date().isoformat()
-            if today != self._today_iso:
-                self.realized_pnl_today = 0.0
-                self._today_iso = today
+            self.roll_daily_pnl()
 
             # Kill switch — daily loss limit
             limit = -self.fc.max_daily_loss_pct / 100.0 * self.paper_equity
@@ -300,19 +298,45 @@ class FuturesTrader:
             self.set_leverage(symbol, leverage)
 
             # Calculate quantity from notional
-            qty = notional_usdt / price
-            qty = self._round_qty(symbol, qty)
+            info = self._get_symbol_info(symbol)
+            step       = info.get("step_size", 0.001)
+            min_qty    = info.get("min_qty", step)
+            min_not    = info.get("min_notional", 5.0)
+            qty_prec   = info.get("quantity_precision", 3)
+
+            qty = self._round_qty(symbol, notional_usdt / price)
+
+            # FIX 2026-06-22: antes se redondeaba SOLO hacia abajo y la orden
+            # moría ("quantity rounds to 0" en BTC, "notional < min" en ETH).
+            # Ahora, si la cantidad no alcanza el lote mínimo o el notional
+            # mínimo del exchange, se redondea HACIA ARRIBA al lote viable.
+            needed_qty = max(min_qty, min_not / price)
+            if qty < needed_qty:
+                qty = math.ceil(needed_qty / step) * step
+                qty = round(qty, qty_prec)
+
             if qty <= 0:
-                logger.error(f"open_position {symbol}: quantity rounds to 0")
+                logger.error(f"open_position {symbol}: quantity rounds to 0 (price ${price:.2f})")
                 return None
 
-            # Validate min notional
-            info = self._get_symbol_info(symbol)
             actual_notional = qty * price
-            if actual_notional < info.get("min_notional", 5.0):
+
+            # Guard: si el lote viable más chico excede el techo razonable
+            # (max_notional del par o 40% del equity), NO operamos este símbolo
+            # a este tamaño de cuenta — log único y claro, sin spam.
+            equity_cap = 0.40 * (self.paper_equity if self.fc.paper_trade else
+                                 (self.get_futures_balance_usdt() or self.paper_equity))
+            hard_cap = max(notional_usdt, equity_cap)
+            if actual_notional > hard_cap:
+                logger.warning(
+                    f"open_position {symbol}: lote mínimo viable ${actual_notional:.2f} "
+                    f"> tope ${hard_cap:.2f} — símbolo no operable a este tamaño de cuenta, omitido"
+                )
+                return None
+
+            if actual_notional < min_not:
                 logger.error(
-                    f"open_position {symbol}: notional ${actual_notional:.2f} < min "
-                    f"${info.get('min_notional', 5.0):.2f}"
+                    f"open_position {symbol}: notional ${actual_notional:.2f} < min ${min_not:.2f}"
                 )
                 return None
 
@@ -396,8 +420,14 @@ class FuturesTrader:
                 logger.error(f"close_position {symbol}: no exit price available")
                 return None
 
+            # A position is paper if it was opened in paper mode (pos.paper),
+            # regardless of the current runtime mode (self.fc.paper_trade).
+            # This prevents paper positions from triggering real API orders if the
+            # mode was switched after the position was opened.
+            is_paper_position = pos.paper
+
             order_id = ""
-            if not self.fc.paper_trade:
+            if not is_paper_position:
                 try:
                     # To close LONG → SELL; to close SHORT → BUY
                     close_side = "SELL" if pos.side == "LONG" else "BUY"
@@ -432,7 +462,7 @@ class FuturesTrader:
             entry_dt = datetime.fromisoformat(pos.entry_time.replace("Z", "+00:00"))
             hold_min = (datetime.now(timezone.utc) - entry_dt).total_seconds() / 60.0
 
-            if self.fc.paper_trade:
+            if is_paper_position:
                 self.paper_equity += pnl_net   # PnL realized
                 self.realized_pnl_today += pnl_net
 
@@ -549,6 +579,27 @@ class FuturesTrader:
         return closed
 
     # ─── Funding (subtracted from PnL during hold) ───────────────────────────
+
+    def roll_daily_pnl(self):
+        """
+        Resetea realized_pnl_today si cambió el día (UTC).
+
+        FIX 2026-06-09 (auditoría H6): antes este reset solo vivía dentro de
+        open_position(), pero el chequeo de kill switch del orchestrator
+        (_risk_checks_pass) corre ANTES y bloqueaba la entrada → open_position
+        nunca se ejecutaba → el reset nunca corría → un kill switch disparado
+        quedaba activo para siempre (los agentes estuvieron congelados desde
+        el 5-jun). Ahora el rollover es público y el orchestrator lo llama
+        antes de evaluar el kill switch.
+        """
+        today = datetime.now(timezone.utc).date().isoformat()
+        if today != self._today_iso:
+            logger.info(
+                f"Daily PnL rollover: {self._today_iso} → {today} "
+                f"(realized ${self.realized_pnl_today:+.4f} reseteado)"
+            )
+            self.realized_pnl_today = 0.0
+            self._today_iso = today
 
     def apply_funding(self, symbol: str, funding_rate: float):
         """

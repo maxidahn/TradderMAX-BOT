@@ -101,6 +101,44 @@ def calculate_volume_ratio(volume: pd.Series, period: int = 20) -> pd.Series:
     return volume / vol_ma
 
 
+def calculate_atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """Average True Range (volatility). df needs high/low/close."""
+    high = df["high"].astype(float)
+    low = df["low"].astype(float)
+    close = df["close"].astype(float)
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        (high - low),
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    return tr.ewm(alpha=1.0 / period, adjust=False).mean()
+
+
+def calculate_adx(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """ADX: trend-strength index (0-100). <~18 = chop/rango, >~25 = tendencia fuerte."""
+    high = df["high"].astype(float)
+    low = df["low"].astype(float)
+    close = df["close"].astype(float)
+    up = high.diff()
+    down = -low.diff()
+    plus_dm = ((up > down) & (up > 0)) * up
+    minus_dm = ((down > up) & (down > 0)) * down
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        (high - low),
+        (high - prev_close).abs(),
+        (low - prev_close).abs(),
+    ], axis=1).max(axis=1)
+    atr = tr.ewm(alpha=1.0 / period, adjust=False).mean()
+    atr = atr.replace(0, np.nan)
+    plus_di = 100 * (plus_dm.ewm(alpha=1.0 / period, adjust=False).mean() / atr)
+    minus_di = 100 * (minus_dm.ewm(alpha=1.0 / period, adjust=False).mean() / atr)
+    di_sum = (plus_di + minus_di).replace(0, np.nan)
+    dx = 100 * ((plus_di - minus_di).abs() / di_sum)
+    return dx.ewm(alpha=1.0 / period, adjust=False).mean()
+
+
 class Strategy:
     """AI-Enhanced trading strategy combining 5 intelligence layers."""
 
@@ -302,7 +340,12 @@ class Strategy:
             if adapted.regime == "TRENDING" and getattr(adapted, "trend_direction", "neutral") == "down":
                 final_signal = Signal.HOLD
             else:
-                final_signal = Signal.BUY
+                gate_ok, gate_reason = self._entry_gates_ok(df, tech_data["price"])
+                if gate_ok:
+                    final_signal = Signal.BUY
+                else:
+                    final_signal = Signal.HOLD
+                    self._last_gate_reason = gate_reason
         elif combined_score < -(adjusted_threshold * sell_mult):
             # Umbral SELL dinámico: sell_mult × threshold de compra
             # Más ágil y escalado por nivel de riesgo vs el anterior 0.60× fijo
@@ -337,6 +380,44 @@ class Strategy:
             tv_signal=tv_insight.signal if tv_active else "",
             explanation=explanation,
         )
+
+    def _entry_gates_ok(self, df, price: float) -> tuple:
+        """
+        Filtros de ENTRADA aplicados solo a señales BUY. Devuelven (permitido, motivo).
+        - Anti-chop (ADX): exige tendencia real; bloquea entradas en mercado lateral.
+        - Gate de coste: exige que la volatilidad reciente (ATR%) supere el coste
+          ida-vuelta (fees + slippage) por un margen, para que el edge pague comisiones.
+        Fail-open: ante cualquier error de cálculo, no bloquea (preserva conducta previa).
+        """
+        cfg = self.config
+        try:
+            # ── Anti-chop (ADX) ──
+            if getattr(cfg, "anti_chop_enabled", False):
+                adx_series = calculate_adx(df, getattr(cfg, "adx_period", 14))
+                adx_val = float(adx_series.iloc[-1])
+                if not np.isnan(adx_val) and adx_val < getattr(cfg, "adx_min", 20.0):
+                    return False, f"Anti-chop: ADX {adx_val:.0f} < {cfg.adx_min:.0f} (sin tendencia)"
+
+            # ── Gate de coste / volatilidad ──
+            if getattr(cfg, "cost_gate_enabled", False) and price > 0:
+                atr_series = calculate_atr(df, getattr(cfg, "atr_period", 14))
+                atr_val = float(atr_series.iloc[-1])
+                if not np.isnan(atr_val):
+                    atr_pct = atr_val / price * 100.0
+                    round_trip_cost = (
+                        self.costs.round_trip_fee_pct
+                        + 2 * self.costs.slippage_base_pct
+                    )
+                    min_atr_pct = round_trip_cost * getattr(cfg, "cost_gate_atr_mult", 1.5)
+                    if atr_pct < min_atr_pct:
+                        return False, (
+                            f"Gate de coste: ATR {atr_pct:.2f}% < {min_atr_pct:.2f}% "
+                            f"(movimiento esperado no paga fees)"
+                        )
+        except Exception:
+            return True, ""  # fail-open: nunca romper el loop por el filtro
+
+        return True, ""
 
     def _analyze_technical(self, df, symbol, adapted) -> tuple:
         """Layer 1: Technical analysis with adapted parameters."""
@@ -713,32 +794,32 @@ class Strategy:
         sl = adapted_sl or self.config.stop_loss_pct
         tp = adapted_tp or self.config.take_profit_pct
 
-        # Total cost drag: round-trip fees + estimated slippage on exit
-        cost_drag = self.costs.round_trip_fee_pct + self.costs.slippage_base_pct
-
+        # ── FIX 2026-06-09 (auditoría H2): disparo por PnL BRUTO ─────────────
+        # Antes se restaba cost_drag (~0.25%) del PnL para los triggers, lo que
+        # acercaba el SL (saltaba en -1.95% bruto para SL 2.2%) y alejaba el TP
+        # (necesitaba +4.65% bruto) AL MISMO TIEMPO. Resultado real: 26 SL vs
+        # 2 TP en 143 trades. Los costes se contemplan al dimensionar el TP
+        # (R/R 1:2) y en el reporting de PnL neto, no en el disparo.
         if side == "BUY":
             pnl_pct = ((current_price - entry_price) / entry_price) * 100
         else:
             pnl_pct = ((entry_price - current_price) / entry_price) * 100
 
-        # Net P&L after costs
-        net_pnl_pct = pnl_pct - cost_drag
-
-        # SL: trigger based on NET loss
-        if net_pnl_pct <= -sl:
-            logger.info(f"SL: gross {pnl_pct:+.2f}% → net {net_pnl_pct:+.2f}% (limit: -{sl}%)")
+        # SL: trigger on GROSS loss
+        if pnl_pct <= -sl:
+            logger.info(f"SL: gross {pnl_pct:+.2f}% (limit: -{sl}%)")
             return "STOP_LOSS"
 
         # Partial TP: fire at 50% of TP target (only once, before full TP)
         if self.config.partial_tp_enabled and not partial_tp_taken:
             partial_target = tp / 2
-            if net_pnl_pct >= partial_target:
-                logger.info(f"PARTIAL_TP: net {net_pnl_pct:+.2f}% ≥ {partial_target:.2f}% (50% of TP {tp}%)")
+            if pnl_pct >= partial_target:
+                logger.info(f"PARTIAL_TP: gross {pnl_pct:+.2f}% ≥ {partial_target:.2f}% (50% of TP {tp}%)")
                 return "PARTIAL_TP"
 
-        # Full TP: trigger based on NET profit
-        if net_pnl_pct >= tp:
-            logger.info(f"TP: gross {pnl_pct:+.2f}% → net {net_pnl_pct:+.2f}% (target: +{tp}%)")
+        # Full TP: trigger on GROSS profit
+        if pnl_pct >= tp:
+            logger.info(f"TP: gross {pnl_pct:+.2f}% (target: +{tp}%)")
             return "TAKE_PROFIT"
 
         return None

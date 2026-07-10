@@ -41,6 +41,46 @@ BEARISH_KEYWORDS = [
     "recession", "inflation", "rate hike", "hawkish", "default",
 ]
 
+# ─── Mapeo símbolo → términos de búsqueda + categoría CryptoCompare ──────────
+# FIX 2026-06-09 (auditoría H4): antes los pares no-BTC buscaban el símbolo
+# literal ("solusdc", "xrpusdc") que NINGÚN titular contiene → news_score era
+# siempre 0 para 7 de 9 pares. Ahora cada activo busca por sus nombres reales
+# y usa la categoría correspondiente de la API de CryptoCompare.
+COIN_NEWS_MAP = {
+    "BTC":  (["bitcoin", "btc"],            "BTC"),
+    "ETH":  (["ethereum", "ether ", "eth "], "ETH"),
+    "SOL":  (["solana"],                     "SOL"),
+    "XRP":  (["xrp", "ripple"],              "XRP"),
+    "ADA":  (["cardano"],                    "ADA"),
+    "AVAX": (["avalanche", "avax"],          "AVAX"),
+    "LINK": (["chainlink"],                  "LINK"),
+    "BNB":  (["bnb", "binance coin", "binance chain"], "BNB"),
+    "DOT":  (["polkadot"],                   "DOT"),
+    "PAXG": (["gold", "xau", "precious metals", "paxg"], None),
+}
+
+_QUOTE_ASSETS = ("USDC", "USDT", "BUSD", "FDUSD", "BTC", "ETH", "BNB")
+
+
+def _base_coin(symbol: str) -> str:
+    """'SOLUSDC' → 'SOL'. Si no matchea ningún quote conocido, devuelve el símbolo."""
+    for q in _QUOTE_ASSETS:
+        if symbol.endswith(q) and len(symbol) > len(q):
+            return symbol[: -len(q)]
+    return symbol
+
+
+# ─── Eventos macro de alto impacto ───────────────────────────────────────────
+# Si una noticia reciente contiene estos términos, el bot bloquea entradas
+# nuevas durante MACRO_BLOCK_SECONDS (volatilidad de evento ≠ edge técnico).
+MACRO_EVENT_KEYWORDS = [
+    "fomc", "federal reserve", "fed meeting", "fed decision",
+    "rate decision", "rate hike", "rate cut", "interest rate decision",
+    "cpi report", "cpi data", "inflation report", "inflation data",
+    "nonfarm payrolls", "jobs report", "powell",
+]
+MACRO_BLOCK_SECONDS = 2 * 3600  # 2 horas desde la publicación de la noticia
+
 
 @dataclass
 class SentimentResult:
@@ -96,6 +136,7 @@ class SentimentAnalyzer:
         self._cache_ttl = 300          # 5 min cache for price/news data
         self._fg_cache: dict = {}      # Separate cache for Fear & Greed (updates daily)
         self._fg_cache_ttl = 3600 * 4  # 4 hours — F&G only changes once/day
+        self._macro_event: Optional[dict] = None  # Último evento macro detectado
 
     def analyze(self, symbol: str) -> SentimentResult:
         """
@@ -114,19 +155,19 @@ class SentimentAnalyzer:
             if time.time() - cached["time"] < self._cache_ttl:
                 return cached["result"]
 
-        # Determine search terms
-        if "BTC" in symbol:
-            search_terms = ["bitcoin", "btc", "crypto"]
+        # Determine search terms — FIX 2026-06-09: nombres reales por activo
+        base = _base_coin(symbol)
+        terms, category = COIN_NEWS_MAP.get(base, ([base.lower()], None))
+        search_terms = [t.lower() for t in terms]
+        if base == "BTC":
             asset = "bitcoin"
-        elif "PAXG" in symbol:
-            search_terms = ["gold", "xau", "precious metals", "paxg"]
+        elif base == "PAXG":
             asset = "gold"
         else:
-            search_terms = [symbol.lower()]
-            asset = symbol.lower()
+            asset = base.lower()
 
         # Gather signals from multiple sources
-        news_score, headlines           = self._analyze_news(search_terms)
+        news_score, headlines           = self._analyze_news(search_terms, category)
         momentum_score                  = self._analyze_momentum(symbol)
         market_score                    = self._analyze_market_indicators(asset)
         fg_score, fg_value, fg_label    = self._fear_greed_index()
@@ -178,31 +219,45 @@ class SentimentAnalyzer:
         self._cache[cache_key] = {"time": time.time(), "result": result}
         return result
 
-    def _analyze_news(self, search_terms: List[str]) -> tuple:
+    def _analyze_news(self, search_terms: List[str], category: Optional[str] = None) -> tuple:
         """
         Fetch and analyze recent news headlines.
         Uses CryptoCompare News API (free tier).
+
+        FIX 2026-06-09 (auditoría H4):
+          - Si hay categoría CryptoCompare para el activo (BTC, ETH, SOL...),
+            pide noticias YA filtradas por ese activo (?categories=SOL).
+          - El matching por keywords usa nombres reales ("solana", "cardano"),
+            no el símbolo del par.
+          - De paso escanea TODOS los titulares recientes buscando eventos
+            macro de alto impacto (FOMC, CPI, decisión de tasas) y guarda el
+            resultado para macro_event_active().
         """
         headlines = []
         scores = []
 
         try:
-            # CryptoCompare free news API
             url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
+            if category:
+                url += f"&categories={category}"
             resp = requests.get(url, timeout=10)
 
             if resp.status_code == 200:
                 data = resp.json()
                 articles = data.get("Data", [])
 
+                # ── Escaneo de eventos macro (sobre todos los artículos) ──────
+                self._scan_macro_events(articles)
+
                 for article in articles[:30]:
                     title = article.get("title", "")
                     body = article.get("body", "")[:200]
                     text = f"{title} {body}"
-
-                    # Check if relevant to our asset
                     text_lower = text.lower()
-                    if any(term in text_lower for term in search_terms):
+
+                    # Con categoría, los artículos ya vienen filtrados por activo;
+                    # sin categoría, filtrar por términos del activo.
+                    if category or any(term in text_lower for term in search_terms):
                         score = _analyze_text(text)
                         scores.append(score)
                         headlines.append(title)
@@ -215,6 +270,45 @@ class SentimentAnalyzer:
 
         avg_score = sum(scores) / len(scores)
         return avg_score, headlines
+
+    def _scan_macro_events(self, articles: list):
+        """
+        Busca noticias macro de alto impacto publicadas recientemente.
+        Si encuentra una dentro de la ventana MACRO_BLOCK_SECONDS, la registra
+        en self._macro_event para que el bot bloquee entradas nuevas.
+        """
+        try:
+            now = time.time()
+            for article in articles[:50]:
+                title = article.get("title", "") or ""
+                published = float(article.get("published_on", 0) or 0)
+                age = now - published if published > 0 else None
+                if age is None or age > MACRO_BLOCK_SECONDS:
+                    continue
+                title_lower = title.lower()
+                if any(kw in title_lower for kw in MACRO_EVENT_KEYWORDS):
+                    self._macro_event = {
+                        "headline":     title,
+                        "published_on": published,
+                        "detected_at":  now,
+                    }
+                    logger.info(f"⚠️ Evento macro detectado ({int(age/60)} min): {title[:90]}")
+                    return
+        except Exception as e:
+            logger.debug(f"_scan_macro_events failed: {e}")
+
+    def macro_event_active(self) -> Optional[dict]:
+        """
+        Devuelve el evento macro vigente (dict con headline) o None.
+        Un evento expira MACRO_BLOCK_SECONDS después de su publicación.
+        """
+        ev = getattr(self, "_macro_event", None)
+        if not ev:
+            return None
+        if time.time() - ev.get("published_on", 0) > MACRO_BLOCK_SECONDS:
+            self._macro_event = None
+            return None
+        return ev
 
     def _analyze_momentum(self, symbol: str) -> float:
         """
@@ -246,10 +340,12 @@ class SentimentAnalyzer:
         Uses CoinGecko for crypto, public APIs for gold.
         """
         try:
-            if asset == "bitcoin":
-                return self._crypto_market_score()
-            elif asset == "gold":
+            if asset == "gold":
                 return self._gold_market_score()
+            # FIX 2026-06-09: el market score global (CoinGecko market cap 24h)
+            # aplica a TODO activo cripto, no solo a bitcoin. Antes los altcoins
+            # recibían siempre 0 en esta sub-capa.
+            return self._crypto_market_score()
         except Exception as e:
             logger.debug(f"Market indicator analysis failed: {e}")
 

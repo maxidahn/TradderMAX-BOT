@@ -2,23 +2,399 @@
   "history": [
     {
       "agent": "MomentumHunter",
+      "param": "sl_pct",
+      "direction": "up",
+      "delta": 0.3,
+      "reasoning": "SL hit on minor pullback; ADX 16.56 shows weak trend; wider SL allows trend confirmation.",
+      "timestamp": "2026-06-10T16:48:28.280297+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing exit captured 0.90% gain. No adjustment needed.",
+      "timestamp": "2026-06-10T18:54:53.449803+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup. Timeout exit is normal; no pattern yet.",
+      "timestamp": "2026-06-10T23:13:06.698002+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
       "param": "max_hold_minutes",
       "direction": "down",
-      "delta": 60.0,
-      "reasoning": "Trade exited on timeout with minimal profit; reducing hold time prevents capital lock-up.",
-      "timestamp": "2026-05-18T17:45:40.540152+00:00"
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT after 182min with -0.99% loss; shorter holds reduce whipsaw risk.",
+      "timestamp": "2026-06-11T15:04:04.853771+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT after 182min with -1.02% loss; momentum had likely dissipated.",
+      "timestamp": "2026-06-11T23:43:18.971186+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 20.0,
+      "reasoning": "Trade exited on TIMEOUT after 196min vs 182min limit; momentum had faded, capital locked.",
+      "timestamp": "2026-06-12T05:56:14.837527+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 10.0,
+      "reasoning": "Trade exited by TIMEOUT at 170min vs 164min limit; small loss suggests hold too long.",
+      "timestamp": "2026-06-12T11:19:24.759428+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing exit worked as intended at 1.57% gain.",
+      "timestamp": "2026-06-12T15:20:52.792202+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; timeout exit is normal behavior, not an error signal.",
+      "timestamp": "2026-06-12T22:35:20.950840+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 20.0,
+      "reasoning": "Trade exited on TIMEOUT at 164min with -0.41% loss; reducing hold time prevents capital lock-up in rangebound moves.",
+      "timestamp": "2026-06-13T03:24:26.091000+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 8.0,
+      "reasoning": "Trade exited on TIMEOUT at 172min vs 164min limit; momentum had dissipated.",
+      "timestamp": "2026-06-13T07:01:50.892147+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT with minimal gain (+0.11%). Reduce hold window to capture momentum faster before decay.",
+      "timestamp": "2026-06-13T10:32:48.708937+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 13.0,
+      "reasoning": "Trade exited on TIMEOUT at 161min vs 148min limit; small loss suggests earlier exit warranted.",
+      "timestamp": "2026-06-13T14:00:56.769055+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 14.0,
+      "reasoning": "Trade exited via TIMEOUT at 165min vs 151min limit; micro loss suggests holding too long.",
+      "timestamp": "2026-06-13T17:05:46.254556+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT after 151min with -0.63% loss; momentum had stalled, exit earlier.",
+      "timestamp": "2026-06-14T01:06:52.964497+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup: strong ADX, RSI oversold, EMA alignment, proper exit.",
+      "timestamp": "2026-06-14T05:30:15.744185+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 15.0,
+      "reasoning": "Trade timed out at 163min vs 148min limit; exit by timeout suggests hold window too loose.",
+      "timestamp": "2026-06-14T08:13:39.503531+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound momentum setup; trailing stop worked as intended.",
+      "timestamp": "2026-06-14T21:28:20.696923+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "sl_pct",
+      "direction": "up",
+      "delta": 0.3,
+      "reasoning": "SL hit at 1.47% loss despite strong RSI overbought signal; raise SL buffer to avoid whipsaws",
+      "timestamp": "2026-06-14T21:40:34.170192+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "rsi_extreme_high",
+      "direction": "up",
+      "delta": 27.0,
+      "reasoning": "RSI 92.5 exceeded threshold 65.0; signal fired but price continued up. Raise threshold to filter stronger reversals.",
+      "timestamp": "2026-06-14T23:20:47.314773+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing exit captured 0.91% gain with strong ADX/RSI confluence.",
+      "timestamp": "2026-06-15T00:04:37.137327+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "rsi_extreme_high",
+      "direction": "up",
+      "delta": 8.0,
+      "reasoning": "RSI 76 triggered short on overbought, but momentum +8.85 showed continuation strength. Raise threshold to 73.",
+      "timestamp": "2026-06-15T02:20:38.895056+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 16.0,
+      "reasoning": "Trade timed out at 152min vs 136min limit; closed -0.74%. Tighter timeout prevents decay.",
+      "timestamp": "2026-06-15T04:52:50.916107+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 20.0,
+      "reasoning": "Trade exited by timeout at 144min vs 136min limit; momentum exhausted, suggesting shorter hold window.",
+      "timestamp": "2026-06-15T07:33:35.574693+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing stop executed as designed. No adjustment needed.",
+      "timestamp": "2026-06-15T14:11:41.383934+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing exit captured 2.13% gain. No adjustment warranted.",
+      "timestamp": "2026-06-15T16:17:20.529762+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup: RSI overbought, BB touch, strong trend (ADX 57), trailing exit executed correctly.",
+      "timestamp": "2026-06-15T17:13:12.347631+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 20.0,
+      "reasoning": "Trade exited on TIMEOUT after 136 min with -1.11% loss; reduce hold window to cut losers faster.",
+      "timestamp": "2026-06-15T20:51:23.091418+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing stop worked as intended. No adjustment needed.",
+      "timestamp": "2026-06-15T22:34:32.711900+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound oversold setup; timeout exit is normal operational behavior.",
+      "timestamp": "2026-06-16T00:46:49.509487+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 20.0,
+      "reasoning": "Trade exited on TIMEOUT at 142min vs 122min limit; profitable but inefficient hold.",
+      "timestamp": "2026-06-16T04:32:53.960023+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 24.0,
+      "reasoning": "Trade exited on TIMEOUT at 146min vs 122min limit; reducing timeout captures profitable moves earlier.",
+      "timestamp": "2026-06-16T09:01:15.687281+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 10.0,
+      "reasoning": "Trade exited on TIMEOUT after 137min vs 132min limit; profitable but inefficient capital use.",
+      "timestamp": "2026-06-16T11:18:51.015201+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup: strong ADX, correct EMA crossover, RSI extreme, trailing exit worked well.",
+      "timestamp": "2026-06-16T14:34:46.886154+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound RSI oversold setup. Trailing exit worked as designed.",
+      "timestamp": "2026-06-16T15:39:29.485565+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup exited naturally; no clear signal to adjust parameters.",
+      "timestamp": "2026-06-16T21:03:39.209699+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Single small loss (-0.68%) with valid setup (ADX, RSI, EMA alignment) insufficient for parameter adjustment.",
+      "timestamp": "2026-06-17T02:00:10.209454+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 47.0,
+      "reasoning": "Trade closed by TIMEOUT at max_hold_minutes=188 with -0.46% loss; reduce to exit stale setups faster.",
+      "timestamp": "2026-06-17T05:08:21.479792+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup; trailing exit captured gains effectively at +1.95%.",
+      "timestamp": "2026-06-17T16:30:40.961871+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable trade with sound setup: ADX>threshold, RSI extreme, EMA bearish, trailing exit worked well.",
+      "timestamp": "2026-06-17T19:47:10.583151+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Single -0.33% loss on valid oversold setup. Insufficient data for parameter adjustment.",
+      "timestamp": "2026-06-17T21:46:04.619170+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Profitable short trade with sound setup; trailing exit captured 0.55% gain efficiently in 19min.",
+      "timestamp": "2026-06-17T22:05:30.479396+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Trade executed profitably with sound oversold reversal setup; TP hit as designed.",
+      "timestamp": "2026-06-18T00:13:49.597760+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT after 182min with -0.12% loss; reduce hold time to capture quicker exits.",
+      "timestamp": "2026-06-18T03:16:04.109126+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Single -0.51% loss with sound entry setup (ADX 44, RSI 67, vol 2.7x). Insufficient pattern for adjustment.",
+      "timestamp": "2026-06-18T10:15:40.335479+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 30.0,
+      "reasoning": "Trade exited on TIMEOUT after 261min vs 182min limit; reduce to avoid holding weak positions.",
+      "timestamp": "2026-06-18T14:36:50.242685+00:00"
+    },
+    {
+      "agent": "MomentumHunter",
+      "param": "none",
+      "direction": "none",
+      "delta": 0.0,
+      "reasoning": "Trade was profitable with sound setup; trailing exit captured momentum well.",
+      "timestamp": "2026-06-18T16:00:32.019016+00:00"
+    },
+    {
+      "agent": "ReversalSniper",
+      "param": "max_hold_minutes",
+      "direction": "down",
+      "delta": 15.0,
+      "reasoning": "Trade held 125min vs 118min max, exited on reversal signal. Extend hold risked worse exits.",
+      "timestamp": "2026-06-18T18:06:03.353681+00:00"
     },
     {
       "agent": "MomentumHunter",
       "param": "sl_pct",
       "direction": "up",
-      "delta": 0.5,
-      "reasoning": "SL hit after 87min on valid setup (ADX24, RSI32, vol1.8x); stop too tight at 1.5%",
-      "timestamp": "2026-05-18T19:52:13.529279+00:00"
+      "delta": 0.35,
+      "reasoning": "SL hit on valid setup (ADX 23.56, minus_di 31.38 strong); small 1.47% loss suggests SL too tight.",
+      "timestamp": "2026-06-18T19:44:48.990409+00:00"
     }
   ],
   "stats": {
-    "calls": 2,
-    "applied": 0
+    "calls": 49,
+    "applied": 6
   }
 }
