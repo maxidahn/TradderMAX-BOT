@@ -17,3 +17,4 @@ data/futures_trades.json
 data/trade_history.json
 data/ml_feedback.json
 data/online_ml_*.NUCLEAR_BACKUP_*.json
+iniciar_bot.command
