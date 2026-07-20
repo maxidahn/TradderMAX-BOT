@@ -22,6 +22,8 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
+import market_data   # datos de precio por el mirror público (no geo-bloqueado)
+
 logger = logging.getLogger("celerity.v2.executor")
 
 FEE_TAKER = 0.0004  # 0.04% Futures taker
@@ -83,47 +85,70 @@ class ExecutorV2:
 
     # ─── Conexión ────────────────────────────────────────────────────────────
     def connect(self) -> bool:
+        """
+        Datos SIEMPRE por el mirror público (no bloqueado por ubicación).
+        - Paper: no necesita cliente autenticado; arranca aunque el mirror tenga
+          un hipo momentáneo (el loop reintenta) → nunca crashea el dashboard.
+        - Live: además conecta el cliente de futures para poner ÓRDENES reales.
+        """
+        data_ok = market_data.reachable()
+        if self.cfg.paper_trade:
+            self.connected = True
+            logger.info("ExecutorV2 conectado (PAPER · datos por mirror público · reachable=%s)", data_ok)
+            return True
+        # ── Live: hace falta cliente autenticado para las órdenes ──
         try:
             from binance.client import Client
-            if self.cfg.has_credentials:
-                self.client = Client(self.cfg.api_key, self.cfg.api_secret, testnet=self.cfg.testnet)
-                self.client.futures_ping()
-            else:
-                self.client = Client()  # público (sirve para precios en paper)
+            if not self.cfg.has_credentials:
+                logger.error("Live sin claves de Binance — no puedo operar en real")
+                return False
+            self.client = Client(self.cfg.api_key, self.cfg.api_secret, testnet=self.cfg.testnet)
+            self.client.futures_ping()
             self.connected = True
-            logger.info("ExecutorV2 conectado (%s)", "LIVE" if not self.cfg.paper_trade else "PAPER")
+            logger.info("ExecutorV2 conectado (LIVE)")
             return True
         except Exception as e:
-            logger.error("ExecutorV2 connect falló: %s", e)
+            logger.error("ExecutorV2 connect (LIVE) falló: %s", e)
             return False
 
     # ─── Precios / metadata ──────────────────────────────────────────────────
     def price(self, symbol: str) -> Optional[float]:
+        # Live con cliente: precio de futures. Paper/fallback: mirror público.
+        if not self.cfg.paper_trade and self.client:
+            try:
+                return float(self.client.futures_symbol_ticker(symbol=symbol)["price"])
+            except Exception as e:
+                logger.debug("futures ticker %s falló, uso mirror: %s", symbol, e)
         try:
-            return float(self.client.futures_symbol_ticker(symbol=symbol)["price"])
+            return market_data.get_price(symbol)
         except Exception as e:
-            logger.error("price %s: %s", symbol, e)
+            logger.error("price %s (mirror): %s", symbol, e)
             return None
 
     def _info(self, symbol: str) -> dict:
         if symbol in self._symbol_info:
             return self._symbol_info[symbol]
-        try:
-            info = self.client.futures_exchange_info()
-            for s in info["symbols"]:
-                if s["symbol"] == symbol:
-                    f = {x["filterType"]: x for x in s["filters"]}
-                    parsed = {
-                        "step": float(f.get("LOT_SIZE", {}).get("stepSize", 0.001)),
-                        "min_qty": float(f.get("LOT_SIZE", {}).get("minQty", 0.001)),
-                        "min_notional": float(f.get("MIN_NOTIONAL", {}).get("notional", 5.0)),
-                        "qty_prec": int(s.get("quantityPrecision", 3)),
-                    }
-                    self._symbol_info[symbol] = parsed
-                    return parsed
-        except Exception as e:
-            logger.debug("exchange_info: %s", e)
-        return {"step": 0.001, "min_qty": 0.001, "min_notional": 5.0, "qty_prec": 3}
+        # Live con cliente: filtros reales de futures
+        if not self.cfg.paper_trade and self.client:
+            try:
+                info = self.client.futures_exchange_info()
+                for s in info["symbols"]:
+                    if s["symbol"] == symbol:
+                        f = {x["filterType"]: x for x in s["filters"]}
+                        parsed = {
+                            "step": float(f.get("LOT_SIZE", {}).get("stepSize", 0.001)),
+                            "min_qty": float(f.get("LOT_SIZE", {}).get("minQty", 0.001)),
+                            "min_notional": float(f.get("MIN_NOTIONAL", {}).get("notional", 5.0)),
+                            "qty_prec": int(s.get("quantityPrecision", 3)),
+                        }
+                        self._symbol_info[symbol] = parsed
+                        return parsed
+            except Exception as e:
+                logger.debug("futures exchange_info: %s", e)
+        # Paper (o fallback): filtros del mirror público
+        info = market_data.get_symbol_info(symbol)
+        self._symbol_info[symbol] = info
+        return info
 
     def _round_qty(self, symbol, qty):
         i = self._info(symbol)

@@ -27,6 +27,7 @@ import pandas as pd
 from config_v2 import config
 from executor_v2 import ExecutorV2
 import strategy_v2
+import market_data   # velas por el mirror público (no geo-bloqueado)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -42,13 +43,9 @@ LAST_EVAL_TS: str = "—"
 
 
 def get_klines(executor, symbol, interval, limit=400):
-    """Velas de Binance Futures como DataFrame. Descarta la vela en formación."""
+    """Velas del mirror público de Binance. Descarta la vela en formación."""
     try:
-        k = executor.client.futures_klines(symbol=symbol, interval=interval, limit=limit)
-        df = pd.DataFrame(k, columns=["t", "open", "high", "low", "close", "v",
-                                      "ct", "qv", "n", "tb", "tq", "ig"])
-        for c in ["open", "high", "low", "close", "v"]:
-            df[c] = df[c].astype(float)
+        df = market_data.get_klines(symbol, interval, limit)
         return df.iloc[:-1].reset_index(drop=True)   # solo velas cerradas
     except Exception as e:
         logger.error("klines %s: %s", symbol, e)
@@ -233,8 +230,9 @@ def main():
 
     executor = ExecutorV2(config)
     if not executor.connect():
-        logger.error("No pude conectar a Binance. Revisá red/claves.")
-        sys.exit(1)
+        # No cortamos el proceso: dejamos el dashboard arriba y el loop reintenta.
+        # (Antes hacía sys.exit → Railway lo reiniciaba en loop = "Application failed to respond")
+        logger.warning("Arranque sin conexión completa — dashboard igual queda arriba, el loop reintenta.")
 
     if once:
         evaluate(executor)
